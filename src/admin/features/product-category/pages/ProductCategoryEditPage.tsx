@@ -1,0 +1,191 @@
+import { Box, Stack, TextField, ThemeProvider, useTheme, CircularProgress } from "@mui/material";
+import { Breadcrumb } from "../../../shared/components/ui/Breadcrumb";
+import { Title } from "../../../shared/components/ui/Title";
+import { Tiptap } from "../../../shared/components/layouts/titap/Tiptap";
+import { useState, useEffect, type Dispatch, type SetStateAction } from "react";
+import { CollapsibleCard } from "../../../shared/components/ui/CollapsibleCard";
+import { useProductCategoryDetail, useNestedProductCategories, useUpdateProductCategory } from "./hooks/useProductCategory";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, Controller } from "react-hook-form";
+import { createCategorySchema, CreateCategoryFormValues } from "../../../shared/schemas/product-category.schema";
+import { SwitchButton } from "../../../shared/components/ui/SwitchButton";
+import { getProductCategoryTheme } from "./configs/theme";
+import { prefixAdmin } from "../../../shared/constants/routes";
+import { FormUploadSingleFile } from "../../../shared/components/upload/FormUploadSingleFile";
+import { toast } from "react-toastify";
+import { LoadingButton } from "../../../shared/components/ui/LoadingButton";
+import { CategoryTreeSelect } from "../../../shared/components/ui/CategoryTreeSelect";
+import { useParams } from "react-router-dom";
+
+export const ProductCategoryEditPage = () => {
+    const { id } = useParams();
+    const [expandedDetail, setExpandedDetail] = useState(true);
+
+    const toggle = (setter: Dispatch<SetStateAction<boolean>>) =>
+        () => setter(prev => !prev);
+
+    const outerTheme = useTheme();
+    const localTheme = getProductCategoryTheme(outerTheme);
+
+    const { data: detailRes, isLoading: isLoadingDetail } = useProductCategoryDetail(id);
+    const { data: nestedCategories = [] } = useNestedProductCategories();
+
+    const { mutate: update, isPending: isUpdating } = useUpdateProductCategory();
+
+    const {
+        control,
+        handleSubmit,
+        reset,
+    } = useForm<CreateCategoryFormValues>({
+        resolver: zodResolver(createCategorySchema),
+        defaultValues: {
+            name: "",
+            description: "",
+            parent: "",
+            status: "active",
+            avatar: "",
+        },
+    });
+
+    // 3. Đổ dữ liệu vào Form khi có dữ liệu từ Detail API
+    useEffect(() => {
+        if (detailRes && detailRes._id) {
+            const detail = detailRes;
+            reset({
+                name: detail.name || "",
+                description: detail.description || "",
+                // Convert sang string để Select Component nhận diện đúng
+                // Xử lý trường hợp parent là object (populated) hoặc string (id)
+                parent: detail.parent
+                    ? (typeof detail.parent === 'object' ? (detail.parent as any)._id : String(detail.parent))
+                    : "",
+                status: detail.status,
+                avatar: detail.avatar || "",
+            });
+        }
+    }, [detailRes, reset]);
+
+    const onSubmit = (data: CreateCategoryFormValues) => {
+        // Gom dữ liệu form + categoryId để gửi lên (Backend dùng chung POST để Edit)
+        const payload = {
+            ...data,
+            parent: data.parent === "" ? null : data.parent
+        };
+
+        update({ id: id!, data: payload }, {
+            onSuccess: (response) => {
+                if (response.success) {
+                    toast.success(response.message || "Cập nhật danh mục thành công");
+                } else {
+                    toast.error(response.message);
+                }
+            },
+            onError: () => {
+                toast.error("Có lỗi xảy ra trong quá trình cập nhật");
+            }
+        });
+    };
+
+    // Hiển thị loading khi đang tải dữ liệu ban đầu
+    if (isLoadingDetail) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+                <CircularProgress color="inherit" />
+            </Box>
+        );
+    }
+
+    return (
+        <>
+            <div className="mb-[calc(5*var(--spacing))] gap-[calc(2*var(--spacing))] flex flex-col md:flex-row md:items-start md:justify-end">
+                <div className="mr-auto">
+                    <Title title="Chỉnh sửa danh mục sản phẩm" />
+                    <Breadcrumb
+                        items={[
+                            { label: "Dashboard", to: "/" },
+                            { label: "Danh mục sản phẩm", to: `/${prefixAdmin}/product-category/list` },
+                            { label: "Chỉnh sửa" }
+                        ]}
+                    />
+                </div>
+            </div>
+
+            <ThemeProvider theme={localTheme}>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <Stack sx={{ margin: { xs: "0px", md: "0px calc(15 * var(--spacing))" }, gap: "calc(5 * var(--spacing))" }}>
+                        <CollapsibleCard
+                            title="Chi tiết"
+                            subheader="Cập nhật tiêu đề, mô tả và hình ảnh danh mục"
+                            expanded={expandedDetail}
+                            onToggle={toggle(setExpandedDetail)}
+                        >
+                            <Stack p="calc(3 * var(--spacing))" gap="calc(3 * var(--spacing))">
+                                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: "calc(3 * var(--spacing)) calc(2 * var(--spacing))" }}>
+                                    <Controller
+                                        name="name"
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <TextField
+                                                {...field}
+                                                label="Tên danh mục"
+                                                error={!!fieldState.error}
+                                                helperText={fieldState.error?.message}
+                                                fullWidth
+                                            />
+                                        )}
+                                    />
+                                    <CategoryTreeSelect
+                                        control={control}
+                                        categories={nestedCategories}
+                                        excludedId={id}
+                                        showRootOption
+                                        name="parent"
+                                        label="Danh mục cha"
+                                    />
+                                </Box>
+
+                                <Controller
+                                    name="description"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Tiptap
+                                            value={field.value ?? ""}
+                                            onChange={field.onChange}
+                                        />
+                                    )}
+                                />
+
+                                <FormUploadSingleFile
+                                    name="avatar"
+                                    control={control}
+                                />
+                            </Stack>
+                        </CollapsibleCard>
+
+                        <Box gap="calc(3 * var(--spacing))" sx={{ display: "flex", alignItems: "center" }}>
+                            <SwitchButton
+                                control={control}
+                                name="status"
+                                checkedValue="active"
+                                uncheckedValue="inactive"
+                            />
+
+                            <LoadingButton
+                                type="submit"
+                                loading={isUpdating}
+                                label="Cập nhật danh mục"
+                                loadingLabel="Đang cập nhật..."
+                                sx={{ minHeight: "3rem", minWidth: "4rem" }}
+                            />
+                        </Box>
+                    </Stack>
+                </form>
+            </ThemeProvider>
+        </>
+    );
+};
+
+
+
+
+
