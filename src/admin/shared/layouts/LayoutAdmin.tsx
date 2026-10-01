@@ -12,7 +12,8 @@ import { useGetMe } from "../../features/authen/pages/hooks/use-get-me";
 import { SocketProvider } from "../context/SocketProvider";
 import { OverrunAlerter } from "../components/OverrunAlerter";
 import { AuthGuard } from "../components/auth/AuthGuard";
-
+import { VocabularyPromptModal } from "../../features/vocabulary/components/VocabularyPromptModal";
+import { GlobalAddVocabulary } from "../../features/vocabulary/components/GlobalAddVocabulary";
 
 import { Suspense } from "react";
 import LoadingScreen from "../components/ui/LoadingScreen";
@@ -31,6 +32,8 @@ const LayoutAdminContent = () => {
 
     return (
         <div className="flex">
+            <VocabularyPromptModal />
+            <GlobalAddVocabulary />
             <OverrunAlerter />
             <ToastContainer />
             <SideBar />

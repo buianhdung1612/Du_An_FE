@@ -16,8 +16,12 @@ import { FormUploadSingleFile } from "../../../shared/components/upload/FormUplo
 import { toast } from "react-toastify";
 import { CategoryTreeSelect } from "../../../shared/components/ui/CategoryTreeSelect";
 import { SwitchButton } from "../../../shared/components/ui/SwitchButton";
+import { useParams } from "react-router-dom";
 
 export const BlogCategoryCreatePage = () => {
+    const { module } = useParams();
+    const activeModule = module || "programming";
+
     const [expandedDetail, setExpandedDetail] = useState(true);
     const toggle = (setter: Dispatch<SetStateAction<boolean>>) =>
         () => setter(prev => !prev);
@@ -43,7 +47,7 @@ export const BlogCategoryCreatePage = () => {
     // Lấy danh mục dạng cây
     const {
         data: nestedCategories = [],
-    } = useNestedBlogCategories();
+    } = useNestedBlogCategories({ module: activeModule });
 
 
     // Tạo
@@ -52,7 +56,8 @@ export const BlogCategoryCreatePage = () => {
     const onSubmit = (data: CreateCategoryFormValues) => {
         const payload = {
             ...data,
-            slug: generateSlug(data.name)
+            slug: generateSlug(data.name),
+            module: activeModule
         };
         create(payload, {
             onSuccess: (response) => {
@@ -76,15 +81,18 @@ export const BlogCategoryCreatePage = () => {
         });
     };
 
+    const displayTitle = activeModule === "english" ? "Tạo mới danh mục bài viết Anh Văn" : "Tạo mới danh mục bài viết Lập Trình";
+    const listTitle = activeModule === "english" ? "Danh mục bài viết Anh Văn" : "Danh mục bài viết Lập Trình";
+
     return (
         <>
             <div className="mb-[calc(5*var(--spacing))] gap-[calc(2*var(--spacing))] flex flex-col md:flex-row md:items-start md:justify-end">
                 <div className="mr-auto">
-                    <Title title="Tạo mới danh mục bài viết" />
+                    <Title title={displayTitle} />
                     <Breadcrumb
                         items={[
                             { label: "Dashboard", to: "/" },
-                            { label: "Danh mục bài viết", to: `/${prefixAdmin}/blog-category/list` },
+                            { label: listTitle, to: `/${prefixAdmin}/${activeModule}/blog-category/list` },
                             { label: "Tạo mới" }
                         ]}
                     />

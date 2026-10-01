@@ -7,7 +7,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getTodayContent, getSummaryByDate, upsertSummary } from '../api/daily-summary.api';
+import { getTodayContent, getSummaryByDate, upsertSummary, getStatistics } from '../api/daily-summary.api';
 import { toast } from 'react-toastify';
 
 export const DailySummaryPage = () => {
@@ -28,6 +28,13 @@ export const DailySummaryPage = () => {
         queryFn: () => getSummaryByDate(dateQuery),
         enabled: !!dateQuery
     });
+
+    const { data: statsRes, isLoading: isStatsLoading } = useQuery({
+        queryKey: ['daily-summary-stats'],
+        queryFn: getStatistics
+    });
+    
+    const stats = statsRes?.data || { today: { blogs: 0, mindMaps: 0, vocabularies: 0 }, yesterday: { blogs: 0, mindMaps: 0, vocabularies: 0 }, thisWeek: { blogs: 0, mindMaps: 0, vocabularies: 0 } };
 
     const [summaryItems, setSummaryItems] = useState<any[]>([]);
     const [reflection, setReflection] = useState('');
@@ -114,6 +121,61 @@ export const DailySummaryPage = () => {
                         </Button>
                     </Stack>
                 </Stack>
+
+                {/* Thống kê học tập */}
+                <Box sx={{ mb: 4 }}>
+                    <Typography variant="h6" fontWeight={700} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Icon icon="solar:chart-square-bold-duotone" width={24} color={theme.palette.primary.main} />
+                        Thống kê học tập
+                    </Typography>
+                    <Grid container spacing={3}>
+                        {[
+                            { label: 'Hôm nay', data: stats.today, icon: 'solar:calendar-date-bold-duotone', color: '#00A76F' },
+                            { label: 'Hôm qua', data: stats.yesterday, icon: 'solar:history-bold-duotone', color: '#FFAB00' },
+                            { label: 'Tuần này', data: stats.thisWeek, icon: 'solar:calendar-bold-duotone', color: '#00B8D9' }
+                        ].map((stat, idx) => (
+                            <Grid item xs={12} md={4} key={idx}>
+                                <Paper elevation={0} sx={{
+                                    p: 3,
+                                    borderRadius: '24px',
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}>
+                                    <Box sx={{ position: 'absolute', top: -20, right: -20, opacity: 0.1 }}>
+                                        <Icon icon={stat.icon} width={120} color={stat.color} />
+                                    </Box>
+                                    <Typography variant="subtitle1" fontWeight={700} color="text.secondary" sx={{ mb: 2 }}>
+                                        {stat.label}
+                                    </Typography>
+                                    <Stack spacing={1.5}>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Icon icon="solar:document-bold" color={theme.palette.text.secondary} />
+                                                Bài viết
+                                            </Typography>
+                                            <Typography variant="subtitle2" fontWeight={700}>{stat.data.blogs}</Typography>
+                                        </Stack>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Icon icon="solar:letter-bold" color={theme.palette.text.secondary} />
+                                                Từ vựng
+                                            </Typography>
+                                            <Typography variant="subtitle2" fontWeight={700}>{stat.data.vocabularies}</Typography>
+                                        </Stack>
+                                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                            <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Icon icon="solar:hierarchy-bold" color={theme.palette.text.secondary} />
+                                                Sơ đồ tư duy
+                                            </Typography>
+                                            <Typography variant="subtitle2" fontWeight={700}>{stat.data.mindMaps}</Typography>
+                                        </Stack>
+                                    </Stack>
+                                </Paper>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Box>
 
                 <Grid container spacing={4}>
                     {/* Left Panel: Available Content */}

@@ -1,7 +1,7 @@
 import React from "react";
-import { 
-    Dialog, DialogTitle, DialogContent, IconButton, Typography, 
-    Box, Stack, Chip, Divider, Grid 
+import {
+    Dialog, DialogTitle, DialogContent, IconButton, Typography,
+    Box, Stack, Chip, Divider, Grid
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { Vocabulary } from "../api/vocabulary.api";
@@ -18,6 +18,8 @@ interface Props {
 
 export const VocabularyDetailModal: React.FC<Props> = ({ open, onClose, vocab }) => {
     if (!vocab) return null;
+
+    const [previewOpen, setPreviewOpen] = React.useState(false);
 
     const speak = (text: string, audioUrl?: string) => {
         if (audioUrl) {
@@ -49,8 +51,29 @@ export const VocabularyDetailModal: React.FC<Props> = ({ open, onClose, vocab })
                 {/* Header Section with Image */}
                 <Box sx={{ position: 'relative', bgcolor: '#f4f6f8' }}>
                     {vocab.imageUrl && (
-                        <Box sx={{ width: '100%', height: 200, overflow: 'hidden' }}>
-                            <img src={vocab.imageUrl} alt={vocab.word} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <Box
+                            onClick={() => setPreviewOpen(true)}
+                            sx={{
+                                width: '100%',
+                                height: 200,
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                position: 'relative',
+                                '&:hover img': {
+                                    transform: 'scale(1.05)'
+                                }
+                            }}
+                        >
+                            <img
+                                src={vocab.imageUrl}
+                                alt={vocab.word}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    transition: 'transform 0.3s ease'
+                                }}
+                            />
                         </Box>
                     )}
                     <Box sx={{ p: 3, pt: vocab.imageUrl ? 2 : 3 }}>
@@ -58,19 +81,19 @@ export const VocabularyDetailModal: React.FC<Props> = ({ open, onClose, vocab })
                             <Typography variant="h4" fontWeight={900} color="#1C252E">
                                 {vocab.word}
                             </Typography>
-                            <IconButton 
+                            <IconButton
                                 onClick={() => speak(vocab.word, vocab.audio)}
                                 sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
                                 size="small"
                             >
                                 <VolumeUpIcon fontSize="small" />
                             </IconButton>
-                            <Chip 
-                                label={(vocab as any).partOfSpeech || "n/a"} 
-                                size="small" 
-                                color="primary" 
+                            <Chip
+                                label={(vocab as any).partOfSpeech || "n/a"}
+                                size="small"
+                                color="primary"
                                 variant="soft"
-                                sx={{ fontStyle: 'italic', fontWeight: 600 }} 
+                                sx={{ fontStyle: 'italic', fontWeight: 600 }}
                             />
                         </Stack>
                         <Typography variant="h6" color="text.secondary" fontWeight={500} sx={{ fontStyle: 'italic' }}>
@@ -172,19 +195,63 @@ export const VocabularyDetailModal: React.FC<Props> = ({ open, onClose, vocab })
                             <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, fontWeight: 700, color: '#F57C00' }}>
                                 <AutoAwesomeIcon fontSize="small" /> Ghi chú từ AI Assistant
                             </Typography>
-                            <Box 
+                            <Box
                                 className="tiptap-content"
-                                sx={{ 
+                                sx={{
                                     '& p': { mb: 1, lineHeight: 1.6 },
                                     '& b': { color: '#E65100' },
                                     '& ul': { pl: 2, mb: 1 }
                                 }}
-                                dangerouslySetInnerHTML={{ __html: vocab.note }} 
+                                dangerouslySetInnerHTML={{ __html: vocab.note }}
                             />
                         </Box>
                     )}
                 </Box>
             </DialogContent>
+
+            {/* Nested Dialog for Cover Image Full Preview */}
+            <Dialog
+                open={previewOpen}
+                onClose={() => setPreviewOpen(false)}
+                maxWidth="md"
+                PaperProps={{
+                    sx: {
+                        bgcolor: "transparent",
+                        boxShadow: "none",
+                        overflow: "hidden"
+                    }
+                }}
+            >
+                <Box sx={{ position: "relative", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <IconButton
+                        onClick={() => setPreviewOpen(false)}
+                        sx={{
+                            position: "absolute",
+                            top: 12,
+                            right: 12,
+                            bgcolor: "rgba(0,0,0,0.5)",
+                            color: "white",
+                            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+                            zIndex: 10
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                    <Box
+                        component="img"
+                        src={vocab.imageUrl || ""}
+                        sx={{
+                            maxWidth: "100%",
+                            maxHeight: "90vh",
+                            borderRadius: "16px",
+                            boxShadow: "0 12px 24px rgba(0,0,0,0.15)",
+                            objectFit: "contain",
+                            bgcolor: "white",
+                            p: 0.5
+                        }}
+                    />
+                </Box>
+            </Dialog>
         </Dialog>
     );
 };

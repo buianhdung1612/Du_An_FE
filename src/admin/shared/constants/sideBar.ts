@@ -9,9 +9,12 @@ import TranslateIcon from "@mui/icons-material/Translate";
 import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import NoteAltIcon from '@mui/icons-material/NoteAlt';
+import SelfImprovementIcon from '@mui/icons-material/SelfImprovement';
+import PaidIcon from '@mui/icons-material/Paid';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
 
 export const menuOverviewData = [
     {
@@ -50,6 +53,39 @@ export const menuOverviewData = [
         path: `/${prefixAdmin}/daily-summary`,
         permission: "all"
     },
+    // lifestyle removed
+    {
+        id: "finance",
+        Icon: PaidIcon,
+        label: "Quản lý tài chính",
+        permission: "all",
+        children: [
+            { id: "dashboard", label: "Tổng quan", path: `/${prefixAdmin}/finance` },
+            { id: "profile", label: "Hồ sơ tài chính", path: `/${prefixAdmin}/finance/profile` },
+            { id: "budget", label: "Lập kế hoạch", path: `/${prefixAdmin}/finance/budget` },
+            { id: "expenses", label: "Chi tiêu", path: `/${prefixAdmin}/finance/expenses` },
+            { id: "savings", label: "Mục tiêu tiết kiệm", path: `/${prefixAdmin}/finance/savings` },
+            { id: "reports", label: "Báo cáo chi tiết", path: `/${prefixAdmin}/finance/reports` },
+        ]
+    },
+    {
+        id: "workout",
+        Icon: SelfImprovementIcon,
+        label: "Tập luyện (Workout)",
+        permission: "all",
+        children: [
+            { id: "logs", label: "Thống kê tập luyện", path: `/${prefixAdmin}/workout/logs` },
+            { id: "exercises", label: "Thư viện bài tập", path: `/${prefixAdmin}/workout/exercises` },
+            { id: "muscle-groups", label: "Quản lý nhóm cơ", path: `/${prefixAdmin}/workout/muscle-groups` },
+        ]
+    },
+    {
+        id: "nutrition",
+        Icon: RestaurantIcon,
+        label: "Dinh dưỡng",
+        path: `/${prefixAdmin}/nutrition`,
+        permission: "all"
+    },
 ];
 
 
@@ -67,17 +103,47 @@ export const menuManagementData = [
         ]
     },
     {
-        id: "blogs",
-        label: "Bài viết",
-        tKey: "admin.sidebar.blogs",
-        Icon: ArticleIcon,
-        permission: "blog_view",
+        id: "documentation",
+        label: "Tài liệu (Docs)",
+        tKey: "admin.sidebar.docs",
+        Icon: AutoStoriesIcon,
+        permission: "all",
         children: [
-            { id: "list", label: "Danh sách bài viết", tKey: "admin.sidebar.blog_list", path: `/${prefixAdmin}/blog/list`, permission: "blog_view" },
-            { id: "category", label: "Danh mục bài viết", tKey: "admin.sidebar.blog_category", path: `/${prefixAdmin}/blog-category/list`, permission: "blog_category_view" },
+            { id: "list", label: "Danh sách bài viết", path: `/${prefixAdmin}/docs/article/list` },
+            { id: "category", label: "Danh mục tài liệu", path: `/${prefixAdmin}/docs/category/list` },
+        ]
+    },
+    // 🇬🇧 MODULE ANH VĂN
+    {
+        id: "english-module",
+        label: "Anh Văn",
+        Icon: TranslateIcon,
+        permission: "all",
+        children: [
+            { id: "vocab-list", label: "Học từ vựng", path: `/${prefixAdmin}/vocabulary/list` },
+            { id: "phrasal-verb", label: "Phrasal Verb (Mindmap)", path: `/${prefixAdmin}/vocabulary/phrasal-verb` },
+            { id: "vocab-topic", label: "Chủ đề từ vựng", path: `/${prefixAdmin}/vocabulary/topic` },
+            { id: "vocab-statistics", label: "Thống kê học tập", path: `/${prefixAdmin}/vocabulary/statistics` },
+            { id: "writing-skills", label: "Writing skills", path: `/${prefixAdmin}/vocabulary/writing-skills` },
+            { id: "english-blogs", label: "Bài viết Anh Văn", path: `/${prefixAdmin}/english/blog/list` },
+            { id: "english-blog-categories", label: "Danh mục bài viết", path: `/${prefixAdmin}/english/blog-category/list` },
+            { id: "english-mindmaps", label: "Sơ đồ Anh Văn", path: `/${prefixAdmin}/english/mind-maps` },
+        ]
+    },
+    // 💻 MODULE LẬP TRÌNH
+    {
+        id: "programming-module",
+        label: "Lập Trình",
+        Icon: ExtensionIcon,
+        permission: "all",
+        children: [
+            { id: "prog-blogs", label: "Bài viết Lập Trình", path: `/${prefixAdmin}/programming/blog/list` },
+            { id: "prog-blog-categories", label: "Danh mục bài viết", path: `/${prefixAdmin}/programming/blog-category/list` },
+            { id: "prog-mindmaps", label: "Sơ đồ Lập Trình", path: `/${prefixAdmin}/programming/mind-maps` },
         ]
     },
 
+    /*
     {
         id: "roles",
         label: "Nhóm quyền",
@@ -113,6 +179,7 @@ export const menuManagementData = [
             { id: "create", label: "Tạo mới", tKey: "admin.sidebar.user_create", path: `/${prefixAdmin}/account-user/create`, permission: "account_user_create" },
         ]
     },
+    */
     {
         id: "settings",
         label: "Cài đặt",
@@ -127,26 +194,6 @@ export const menuManagementData = [
             { id: "settings-social", label: "Mạng xã hội", path: `/${prefixAdmin}/dashboard/settings/social` },
             { id: "settings-app-password", label: "Mật khẩu ứng dụng", path: `/${prefixAdmin}/dashboard/settings/app-password` },
 
-        ]
-    },
-    {
-        id: "vocabulary",
-        label: "Từ vựng",
-        Icon: TranslateIcon,
-        permission: "all",
-        children: [
-            { id: "vocab-list", label: "Kho từ vựng", path: `/${prefixAdmin}/vocabulary/list` },
-            { id: "vocab-topic", label: "Chủ đề từ vựng", path: `/${prefixAdmin}/vocabulary/topic` },
-        ]
-    },
-    {
-        id: "mind-maps",
-        label: "Sơ đồ tư duy",
-        Icon: AccountTreeIcon,
-        permission: "all",
-        children: [
-            { id: "list", label: "Danh sách", path: `/${prefixAdmin}/mind-maps` },
-            { id: "category", label: "Danh mục", path: `/${prefixAdmin}/mind-maps/categories` },
         ]
     },
     {

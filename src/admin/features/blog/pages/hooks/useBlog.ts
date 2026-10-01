@@ -28,7 +28,7 @@ export const useBlogs = (params?: any) => {
                     id: item._id,
                     title: item.name,
                     excerpt: item.description,
-                    featuredImage: item.avatar,
+                    featuredImage: (item.images && item.images.length > 0) ? item.images[0] : item.avatar,
                     viewCount: item.view || 0,
                     status: (item.status || 'draft').toLowerCase(),
                 })),
@@ -76,7 +76,7 @@ export const useBlogDetail = (id?: string | number) => {
                     id: data._id,
                     title: data.name,
                     excerpt: data.description,
-                    featuredImage: data.avatar,
+                    featuredImage: (data.images && data.images.length > 0) ? data.images[0] : data.avatar,
                     status: (data.status || 'draft').toLowerCase(),
                     category: data.category || [],
                 };

@@ -10,9 +10,13 @@ const config: Config = {
     extend: {
       colors: {
         client: {
-          primary: "#FF6262",
-          secondary: "#102937",
-          text: "#505050",
+          primary: "#87c6e3",
+          secondary: "#455265",
+          brand1: "#ffcda3",
+          brand2: "#fce2ce",
+          brand3: "#ffede5",
+          brand4: "#fff5ef",
+          text: "#101010",
         },
         admin: {
           hoverIcon: "rgba(99, 115, 129, 0.08)"
@@ -20,7 +24,9 @@ const config: Config = {
       },
       fontFamily: {
         secondary: ["Merriweather", "serif"],
-        third: ["Pacifico", "cursive"]
+        third: ["Pacifico", "cursive"],
+        body: ["Source Sans Pro", "sans-serif"],
+        heading: ["Source Sans Pro", "sans-serif"],
       },
       screens: {
         "2xl": { max: "1540px" },
@@ -41,6 +47,8 @@ const config: Config = {
     },
   },
   plugins: [
+    // @ts-ignore
+    require('@tailwindcss/typography'),
     plugin(function ({ addComponents, addUtilities }) {
       addComponents({
         ".app-container": {

@@ -10,9 +10,11 @@ import { toast } from 'react-toastify';
 import { prefixAdmin } from '@shared/constants/routes';
 import { NoteEditorDialog } from '../components/NoteEditorDialog';
 import { MenuItem } from '@mui/material';
+import { uploadImagesToCloudinary } from '../../../shared/api/uploadCloudinary.api';
 
 export const MindMapEditorPage = () => {
-    const { id } = useParams();
+    const { id, module } = useParams();
+    const activeModule = module || "programming";
     const navigate = useNavigate();
     const theme = useTheme();
     const meContainer = useRef<HTMLDivElement>(null);
@@ -21,7 +23,7 @@ export const MindMapEditorPage = () => {
     const [categoryId, setCategoryId] = useState('');
     const [categories, setCategories] = useState<CategoryMindMap[]>([]);
     const [isSaving, setIsSaving] = useState(false);
-    
+
     // States for Note Editor
     const [noteDialogOpen, setNoteDialogOpen] = useState(false);
     const [currentNoteContent, setCurrentNoteContent] = useState('');
@@ -44,8 +46,11 @@ export const MindMapEditorPage = () => {
 
         const fetchData = async () => {
             // Fetch categories
-            const catRes = await getCategoryMindMaps();
-            if (catRes.code === 200) setCategories(catRes.data);
+            const catRes = await getCategoryMindMaps({ module: activeModule });
+            if (catRes.code === 200) {
+                const data = catRes.data?.recordList || catRes.data;
+                setCategories(Array.isArray(data) ? data : []);
+            }
 
             if (id) {
                 const res = await getMindMapById(id);
@@ -62,7 +67,7 @@ export const MindMapEditorPage = () => {
         };
 
         fetchData();
-        
+
         // ... (rest of the useEffect handlers)
 
         const handleAction = (target: HTMLElement) => {
@@ -100,8 +105,14 @@ export const MindMapEditorPage = () => {
         };
 
         const handleKeyDownCapture = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            // Ignore if the user is typing inside an input, textarea, or contentEditable element (like mind-elixir's text editor)
+            if (['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable || target.closest('[contenteditable="true"]')) {
+                return;
+            }
+
             // Nhấn Space để mở ghi chú (ưu tiên cao nhất)
-            if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+            if (e.code === 'Space') {
                 const el = meInstance.current.currentNode;
                 if (el) {
                     e.preventDefault();
@@ -114,13 +125,63 @@ export const MindMapEditorPage = () => {
             }
         };
 
+        const handlePaste = async (e: ClipboardEvent) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            const node = meInstance.current.currentNode;
+            if (!node) return;
+
+            if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName) || (e.target as HTMLElement).isContentEditable) {
+                return;
+            }
+
+            let imageFile: File | null = null;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    imageFile = items[i].getAsFile();
+                    break;
+                }
+            }
+
+            if (imageFile) {
+                e.preventDefault();
+                toast.info("Đang tải ảnh lên...");
+                try {
+                    const urls = await uploadImagesToCloudinary([imageFile]);
+                    if (urls.length > 0) {
+                        const url = urls[0];
+                        const img = new Image();
+                        img.onload = () => {
+                            let w = img.width;
+                            let h = img.height;
+                            const MAX_WIDTH = 250;
+                            if (w > MAX_WIDTH) {
+                                h = Math.round((h * MAX_WIDTH) / w);
+                                w = MAX_WIDTH;
+                            }
+                            meInstance.current.reshapeNode(node, {
+                                image: { url, width: w, height: h }
+                            });
+                            toast.success("Đã chèn ảnh vào nhánh!");
+                        };
+                        img.src = url;
+                    }
+                } catch (err) {
+                    toast.error("Lỗi khi tải ảnh");
+                }
+            }
+        };
+
         // Sử dụng { capture: true } để chặn trước khi mind-elixir xử lý
         meContainer.current?.addEventListener('click', handleContainerClick, true);
         window.addEventListener('keydown', handleKeyDownCapture, true);
+        window.addEventListener('paste', handlePaste);
 
         return () => {
             meContainer.current?.removeEventListener('click', handleContainerClick, true);
             window.removeEventListener('keydown', handleKeyDownCapture, true);
+            window.removeEventListener('paste', handlePaste);
         };
     }, [id]);
 
@@ -137,6 +198,7 @@ export const MindMapEditorPage = () => {
                 title,
                 categoryId: categoryId || undefined,
                 data: mapData,
+                module: activeModule
             };
 
             let res;
@@ -148,7 +210,7 @@ export const MindMapEditorPage = () => {
 
             if (res.code === 200) {
                 toast.success('Đã lưu sơ đồ tư duy!');
-                if (!id) navigate(`/${prefixAdmin}/mind-maps/edit/${res.data._id}`);
+                if (!id) navigate(`/${prefixAdmin}/${activeModule}/mind-maps/edit/${res.data._id}`);
             } else {
                 toast.error(res.message || 'Lỗi khi lưu');
             }
@@ -163,21 +225,21 @@ export const MindMapEditorPage = () => {
         <Box sx={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
             <Paper elevation={0} sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
                 <Stack direction="row" spacing={3} alignItems="center">
-                    <IconButton onClick={() => navigate(`/${prefixAdmin}/mind-maps`)}>
+                    <IconButton onClick={() => navigate(`/${prefixAdmin}/${activeModule}/mind-maps`)}>
                         <Icon icon="solar:arrow-left-bold" />
                     </IconButton>
-                    <TextField 
-                        variant="standard" 
+                    <TextField
+                        variant="standard"
                         placeholder="Tiêu đề sơ đồ..."
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        sx={{ 
+                        sx={{
                             flex: 1,
                             '& .MuiInput-root': { fontSize: '1.5rem', fontWeight: 700 }
                         }}
                     />
 
-                    <TextField 
+                    <TextField
                         select
                         size="small"
                         label="Danh mục"
@@ -234,8 +296,8 @@ export const MindMapEditorPage = () => {
                         <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', px: 1, fontWeight: 700, color: 'text.secondary' }}>
                             LAYOUT
                         </Typography>
-                        <Button 
-                            variant="text" 
+                        <Button
+                            variant="text"
                             size="small"
                             onClick={() => {
                                 meInstance.current.direction = MindElixir.SIDE;
@@ -245,8 +307,8 @@ export const MindMapEditorPage = () => {
                         >
                             Hai bên
                         </Button>
-                        <Button 
-                            variant="text" 
+                        <Button
+                            variant="text"
                             size="small"
                             onClick={() => {
                                 meInstance.current.direction = MindElixir.RIGHT;
@@ -258,8 +320,8 @@ export const MindMapEditorPage = () => {
                         </Button>
                     </Stack>
 
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         startIcon={<Icon icon="solar:diskette-bold" />}
                         onClick={handleSave}
                         disabled={isSaving}
@@ -270,11 +332,11 @@ export const MindMapEditorPage = () => {
                 </Stack>
             </Paper>
 
-            <Box 
-                ref={meContainer} 
-                sx={{ 
-                    flex: 1, 
-                    width: '100%', 
+            <Box
+                ref={meContainer}
+                sx={{
+                    flex: 1,
+                    width: '100%',
                     bgcolor: '#f8f9fa',
                     // Tùy chỉnh CSS để sơ đồ đẹp hơn (Premium Look)
                     '& .me-container': {
@@ -306,16 +368,16 @@ export const MindMapEditorPage = () => {
                         stroke: '#cfd8dc !important',
                         strokeWidth: '2px !important',
                     }
-                }} 
+                }}
             />
-            
+
             <Box sx={{ p: 1, bgcolor: 'action.hover', borderTop: `1px solid ${theme.palette.divider}` }}>
                 <Typography variant="caption" color="text.secondary">
                     Phím tắt: <b>Tab</b>: Thêm nhánh con | <b>Enter</b>: Thêm nhánh cùng cấp | <b>Delete</b>: Xóa nhánh
                 </Typography>
             </Box>
 
-            <NoteEditorDialog 
+            <NoteEditorDialog
                 open={noteDialogOpen}
                 onClose={() => {
                     setNoteDialogOpen(false);
@@ -328,7 +390,7 @@ export const MindMapEditorPage = () => {
                         if (el) {
                             let topic = el.nodeObj.topic;
                             const hasIcon = topic.includes('📝');
-                            
+
                             if (newContent && newContent !== '<p></p>' && !hasIcon) {
                                 topic = topic + ' 📝';
                             } else if ((!newContent || newContent === '<p></p>') && hasIcon) {
@@ -336,7 +398,7 @@ export const MindMapEditorPage = () => {
                             }
 
                             // Cập nhật node mà không refresh toàn bộ để tránh nhảy giao diện
-                            meInstance.current.reshapeNode(el, { 
+                            meInstance.current.reshapeNode(el, {
                                 memo: newContent,
                                 topic: topic
                             });

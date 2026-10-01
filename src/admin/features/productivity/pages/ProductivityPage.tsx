@@ -1,5 +1,6 @@
 import { Box, Grid, Typography, useTheme, Stack, Button } from "@mui/material";
 import { useState, useEffect } from "react";
+import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
 import { getActivePlan } from "../api/productivity.api";
 import { useProductivityStore } from "../stores/useProductivityStore";
@@ -13,22 +14,80 @@ import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import { prefixAdmin } from "../../../shared/constants/routes";
 
+import { useCalendarEvents, useUpdateCalendarEvent, useCreateCalendarEvent, useDeleteCalendarEvent } from "../../calendar/pages/hooks/useCalendar";
+import { DailyTaskList } from "../../calendar/components/DailyTaskList";
+import { EventDialog as CalendarEventDialog } from "../../calendar/pages/sections/EventDialog";
+import { toast } from "react-toastify";
+
 export const ProductivityPage = () => {
     const theme = useTheme();
     const navigate = useNavigate();
-    const { activePlan, setActivePlan } = useProductivityStore();
+    const { activePlan, setActivePlan, setCurrentWeekIndex, currentWeekIndex } = useProductivityStore();
     const [viewMode, setViewMode] = useState<'dashboard' | 'goals' | 'schedule'>('dashboard');
+    const [openEventDialog, setOpenEventDialog] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
     const { data: planData, isLoading } = useQuery({
         queryKey: ["active-plan"],
         queryFn: getActivePlan,
     });
 
+    const { data: eventsRes } = useCalendarEvents();
+    const { mutate: updateEvent } = useUpdateCalendarEvent();
+    const { mutate: createEvent } = useCreateCalendarEvent();
+    const { mutate: deleteEvent } = useDeleteCalendarEvent();
+
+    const allEvents = (eventsRes as any)?.data || [];
+
+    const handleToggleTask = (id: string, isCompleted: boolean) => {
+        updateEvent({
+            id,
+            data: { isCompleted }
+        }, {
+            onSuccess: () => toast.success(isCompleted ? 'Đã hoàn thành nhiệm vụ!' : 'Đã mở lại nhiệm vụ')
+        });
+    };
+
+    const handleDeleteTask = (id: string) => {
+        deleteEvent(id, {
+            onSuccess: () => toast.success('Đã xóa nhiệm vụ vĩnh viễn!')
+        });
+    };
+
+    const handleSaveEvent = (eventData: any) => {
+        if (selectedEvent) {
+            updateEvent({
+                id: selectedEvent.id,
+                data: eventData
+            }, {
+                onSuccess: () => {
+                    toast.success('Đã cập nhật nhiệm vụ!');
+                    setOpenEventDialog(false);
+                }
+            });
+        } else {
+            createEvent(eventData, {
+                onSuccess: () => {
+                    toast.success('Đã lên lịch thành công!');
+                    setOpenEventDialog(false);
+                }
+            });
+        }
+    };
+
     useEffect(() => {
         if (planData?.code === 200) {
-            setActivePlan(planData.data);
+            const plan = planData.data;
+            setActivePlan(plan);
+
+            // Calculate current week index based on today's date
+            const startDay = dayjs(plan.startDate).startOf('day');
+            const today = dayjs().startOf('day');
+            const weeksDiff = today.diff(startDay, 'week');
+            const calculatedWeek = Math.max(1, Math.min(13, weeksDiff + 1));
+            setCurrentWeekIndex(calculatedWeek);
         }
-    }, [planData, setActivePlan]);
+    }, [planData, setActivePlan, setCurrentWeekIndex]);
 
     if (isLoading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 10 }}>Loading...</Box>;
 
@@ -116,8 +175,24 @@ export const ProductivityPage = () => {
                         <Stack spacing={3}>
                             <WeeklyMap />
                             <Grid container spacing={3}>
-                                <Grid size={12}>
+                                <Grid size={{ xs: 12, lg: 8 }}>
                                     <ExecutionPanel />
+                                </Grid>
+                                <Grid size={{ xs: 12, lg: 4 }}>
+                                    <DailyTaskList
+                                        tasks={allEvents}
+                                        baseDate={activePlan?.startDate ? dayjs(activePlan.startDate).add(currentWeekIndex - 1, 'week').toDate() : undefined}
+                                        onToggleTask={handleToggleTask}
+                                        onEditTask={(e) => {
+                                            setSelectedEvent(e);
+                                            setOpenEventDialog(true);
+                                        }}
+                                        onDeleteTask={handleDeleteTask}
+                                        onAddTask={() => {
+                                            setSelectedEvent(null);
+                                            setOpenEventDialog(true);
+                                        }}
+                                    />
                                 </Grid>
                             </Grid>
                         </Stack>
@@ -144,6 +219,17 @@ export const ProductivityPage = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <CalendarEventDialog
+                type="task"
+                open={openEventDialog}
+                onClose={() => {
+                    setOpenEventDialog(false);
+                    setSelectedEvent(null);
+                }}
+                onSave={handleSaveEvent}
+                initialEvent={selectedEvent}
+            />
         </Box>
     );
 };

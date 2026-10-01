@@ -85,3 +85,9 @@ export const mapStatusToFrontend = (status: string): string => {
     };
     return statusMap[status] || 'DRAFT';
 };
+
+/** AI trích xuất ý chính bài viết */
+export const generateKeyPoints = async (data: { content: string, description?: string }): Promise<any> => {
+    const response = await apiApp.post(`${BASE_URL}/generate-key-points`, data, withAuth());
+    return response.data;
+};

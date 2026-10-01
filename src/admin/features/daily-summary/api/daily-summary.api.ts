@@ -32,3 +32,8 @@ export const upsertSummary = async (data: any) => {
     const response = await apiApp.post(`${BASE_URL}/upsert`, data, withAuth());
     return response.data;
 };
+
+export const getStatistics = async () => {
+    const response = await apiApp.get(`${BASE_URL}/statistics`, withAuth());
+    return response.data;
+};

@@ -9,10 +9,10 @@ export const useBlogCategories = (params?: any) => {
     });
 };
 
-export const useNestedBlogCategories = () => {
+export const useNestedBlogCategories = (params?: any) => {
     return useQuery({
-        queryKey: ['blog-categories', 'nested'],
-        queryFn: getNestedCategories,
+        queryKey: ['blog-categories', 'nested', params],
+        queryFn: () => getNestedCategories(params),
         select: (res) => res.data,
     });
 };

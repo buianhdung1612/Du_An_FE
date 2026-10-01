@@ -6,7 +6,7 @@ import type { Editor } from '@tiptap/react'
 
 
 export const ImageInsertButton = memo(({ editor }: { editor: Editor }) => {
-    
+
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [url, setUrl] = useState('');
     const [alt, setAlt] = useState('');

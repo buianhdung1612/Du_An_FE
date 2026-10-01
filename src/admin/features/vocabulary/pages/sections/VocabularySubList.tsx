@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { 
-    Box, Stack, Avatar, Typography, IconButton, CircularProgress, 
+import {
+    Box, Stack, Avatar, Typography, IconButton, CircularProgress,
     Table, TableBody, TableCell, TableContainer, TableRow, TableHead,
     Chip, Menu, MenuItem, ListItemIcon, Divider
 } from "@mui/material";
@@ -121,13 +121,13 @@ export const VocabularySubList = ({ topicId, onEditVocab }: VocabularySubListPro
                                     onClose={() => handleCloseMenu(vocab._id)}
                                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                     transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                                    slotProps={{ 
-                                        paper: { 
+                                    slotProps={{
+                                        paper: {
                                             sx: { ...PREMIUM_MENU_STYLE, width: 140 }
-                                        } 
+                                        }
                                     }}
                                 >
-                                    <MenuItem 
+                                    <MenuItem
                                         onClick={() => { handleCloseMenu(vocab._id); onEditVocab(vocab); }}
                                         sx={{ borderRadius: '8px', mb: 0.5 }}
                                     >
@@ -137,8 +137,8 @@ export const VocabularySubList = ({ topicId, onEditVocab }: VocabularySubListPro
                                         <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8125rem', color: '#1C252E' }}>Chỉnh sửa</Typography>
                                     </MenuItem>
                                     <Divider sx={{ borderStyle: 'dashed', my: 1 }} />
-                                    <MenuItem 
-                                        onClick={() => { handleCloseMenu(vocab._id); handleDelete(vocab._id); }} 
+                                    <MenuItem
+                                        onClick={() => { handleCloseMenu(vocab._id); handleDelete(vocab._id); }}
                                         sx={{ borderRadius: '8px', color: 'error.main' }}
                                     >
                                         <ListItemIcon sx={{ minWidth: '32px !important', color: 'inherit' }}>

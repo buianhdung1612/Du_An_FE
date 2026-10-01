@@ -13,8 +13,9 @@ import { getExtensions } from "./TiptapExtensions";
 import { FullscreenControl } from "./sections/FullscreenControl";
 import { AIButtons } from "./sections/AIButtons";
 import { TableButtons } from "./sections/TableButtons";
-import { 
-    Wand2, Type, Sparkles, Bold, Italic, Link as LinkIcon, 
+import { ColorButtons } from "./sections/ColorButtons";
+import {
+    Wand2, Type, Sparkles, Bold, Italic, Link as LinkIcon, Link2Off, Eraser,
     Heading1, Heading2, List, ListOrdered, Quote
 } from "lucide-react";
 import { useAIAssistant } from "./hooks/useAIAssistant";
@@ -113,9 +114,27 @@ export const Tiptap = memo(({ value = '', onChange }: TiptapProps) => {
         };
     }, [isFullscreen]);
 
+    // Prevent cycle: value -> useEffect -> setContent -> onUpdate -> onChange -> value
     useEffect(() => {
-        if (editor && value !== editor.getHTML()) {
-            editor.commands.setContent(value || "");
+        if (!editor) return;
+
+        const currentHtml = editor.getHTML();
+        if (value !== currentHtml) {
+            // Only update if the editor is NOT focused OR the content is significantly different 
+            // from what the editor currently has (to allow external resets/AI fills)
+            if (!editor.isFocused || Math.abs(value.length - currentHtml.length) > 10) {
+                const { from, to } = editor.state.selection;
+                editor.commands.setContent(value || "", { emitUpdate: false });
+
+                // Try to restore cursor position if it was focused
+                if (editor.isFocused) {
+                    try {
+                        editor.commands.setTextSelection({ from, to });
+                    } catch (e) {
+                        // Ignore
+                    }
+                }
+            }
         }
     }, [value, editor]);
 
@@ -168,6 +187,8 @@ export const Tiptap = memo(({ value = '', onChange }: TiptapProps) => {
                         }}
                     />
                     <VerticalDivider />
+                    <ColorButtons editor={editor} />
+                    <VerticalDivider />
                     <AlignmentButtons
                         editor={editor}
                         state={{
@@ -196,7 +217,7 @@ export const Tiptap = memo(({ value = '', onChange }: TiptapProps) => {
 
                 <Box sx={tiptapContentStyles}>
                     {/* BUBBLE MENU */}
-                    <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }}>
+                    <BubbleMenu editor={editor}>
                         <Paper elevation={8} sx={{ display: 'flex', gap: 0.5, p: 0.5, borderRadius: '12px', border: '1px solid var(--palette-divider)' }}>
                             <IconButton size="small" onClick={() => editor.chain().focus().toggleBold().run()} color={editor.isActive('bold') ? 'primary' : 'default'}>
                                 <Bold size={16} />
@@ -204,11 +225,39 @@ export const Tiptap = memo(({ value = '', onChange }: TiptapProps) => {
                             <IconButton size="small" onClick={() => editor.chain().focus().toggleItalic().run()} color={editor.isActive('italic') ? 'primary' : 'default'}>
                                 <Italic size={16} />
                             </IconButton>
-                            <IconButton size="small" onClick={() => {
-                                const url = window.prompt('URL');
-                                if (url) editor.chain().focus().setLink({ href: url }).run();
-                            }} color={editor.isActive('link') ? 'primary' : 'default'}>
+                            <ColorButtons editor={editor} />
+                            <IconButton 
+                                size="small" 
+                                onClick={() => {
+                                    const url = window.prompt('URL', editor.getAttributes('link').href || '');
+                                    if (url !== null) {
+                                        if (url === '') {
+                                            editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                                        } else {
+                                            editor.chain().focus().setLink({ href: url }).run();
+                                        }
+                                    }
+                                }} 
+                                color={editor.isActive('link') ? 'primary' : 'default'}
+                            >
                                 <LinkIcon size={16} />
+                            </IconButton>
+                            {editor.isActive('link') && (
+                                <IconButton 
+                                    size="small" 
+                                    onClick={() => editor.chain().focus().extendMarkRange('link').unsetLink().run()}
+                                    color="error"
+                                >
+                                    <Link2Off size={16} />
+                                </IconButton>
+                            )}
+                            <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                            <IconButton 
+                                size="small" 
+                                onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+                                title="Xóa định dạng"
+                            >
+                                <Eraser size={16} />
                             </IconButton>
                             <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
                             <AIBubbleContent editor={editor} />
@@ -216,7 +265,7 @@ export const Tiptap = memo(({ value = '', onChange }: TiptapProps) => {
                     </BubbleMenu>
 
                     {/* FLOATING MENU */}
-                    <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }}>
+                    <FloatingMenu editor={editor}>
                         <Paper elevation={8} sx={{ display: 'flex', gap: 1, p: 0.75, borderRadius: '16px', border: '1px solid var(--palette-divider)' }}>
                             <Tooltip title="Tiêu đề 1">
                                 <IconButton size="small" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}>
@@ -246,12 +295,12 @@ export const Tiptap = memo(({ value = '', onChange }: TiptapProps) => {
                         </Paper>
                     </FloatingMenu>
 
-                    <EditorContent 
-                        style={{ height: "100%", outline: 'none' }} 
-                        spellCheck="false" 
-                        autoCapitalize="off" 
-                        autoComplete="off" 
-                        editor={editor} 
+                    <EditorContent
+                        style={{ height: "100%", outline: 'none' }}
+                        spellCheck="false"
+                        autoCapitalize="off"
+                        autoComplete="off"
+                        editor={editor}
                     />
                 </Box>
             </Box>
@@ -261,7 +310,7 @@ export const Tiptap = memo(({ value = '', onChange }: TiptapProps) => {
 
 const AIBubbleContent = ({ editor }: { editor: any }) => {
     const { handleAIAction } = useAIAssistant(editor);
-    
+
     return (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
             <Tooltip title="Cải thiện văn bản (AI)">

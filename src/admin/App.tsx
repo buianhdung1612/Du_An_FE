@@ -4,12 +4,24 @@ import { AdminRoutes, AdminAuthRoutes } from './shared/routes/index';
 import { ToastContainer } from 'react-toastify';
 import './shared/styles/index.css';
 
+import ClientLayout from '../client/layouts/ClientLayout';
+import Home from '../client/pages/Home';
+import SinglePost from '../client/pages/SinglePost';
+import DocsPage from '../client/pages/DocsPage';
+import DocDetailPage from '../client/pages/DocDetailPage';
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Redirect Root to Admin */}
-        <Route path="/" element={<Navigate to="/admin" replace />} />
+        {/* Client Routes */}
+        <Route element={<ClientLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/docs" element={<DocsPage />} />
+          <Route path="/docs/:categorySlug" element={<DocDetailPage />} />
+          <Route path="/docs/article/:articleSlug" element={<DocDetailPage />} />
+          <Route path="/post/:slug" element={<SinglePost />} />
+        </Route>
 
         {/* Admin Routes */}
         <Route path='/admin'>

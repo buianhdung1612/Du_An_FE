@@ -1,4 +1,4 @@
-import { Box, Button, ButtonBase, FormHelperText, Stack, Typography } from "@mui/material"
+import { Box, Button, ButtonBase, FormHelperText, Stack, Typography, Dialog, IconButton } from "@mui/material"
 import { UploadFileIcon, UploadIcon } from "../../../assets/icons"
 
 import { useDropzone } from 'react-dropzone';
@@ -20,6 +20,7 @@ export const UploadFiles = memo(({ files, onFilesChange }: UploadFilesProps) => 
 
     const [isUploading, setIsUploading] = useState(false);
     const [isTouched, setIsTouched] = useState(false);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     const filesRef = useRef(files);
     useEffect(() => {
@@ -98,7 +99,8 @@ export const UploadFiles = memo(({ files, onFilesChange }: UploadFilesProps) => 
                     <Box
                         component="img"
                         src={imgSrc}
-                        sx={{ width: 1, height: 1, objectFit: 'cover', borderRadius: '10px' }}
+                        onClick={() => setPreviewImage(imgSrc)}
+                        sx={{ width: 1, height: 1, objectFit: 'cover', borderRadius: '10px', cursor: 'pointer' }}
                     />
 
                     {/* Nút xóa ảnh */}
@@ -222,6 +224,53 @@ export const UploadFiles = memo(({ files, onFilesChange }: UploadFilesProps) => 
                     </Box>
                 </>
             )}
+
+            <Dialog
+                open={Boolean(previewImage)}
+                onClose={() => setPreviewImage(null)}
+                maxWidth="lg"
+                PaperProps={{
+                    sx: {
+                        backgroundColor: 'transparent',
+                        boxShadow: 'none',
+                        overflow: 'hidden',
+                        position: 'relative'
+                    }
+                }}
+            >
+                {previewImage && (
+                    <>
+                        <IconButton
+                            onClick={() => setPreviewImage(null)}
+                            sx={{
+                                position: 'absolute',
+                                right: 8,
+                                top: 8,
+                                color: 'white',
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.7)'
+                                }
+                            }}
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z" />
+                            </svg>
+                        </IconButton>
+                        <Box
+                            component="img"
+                            src={previewImage}
+                            alt="Preview"
+                            sx={{
+                                maxWidth: '100%',
+                                maxHeight: '90vh',
+                                objectFit: 'contain',
+                                borderRadius: '8px'
+                            }}
+                        />
+                    </>
+                )}
+            </Dialog>
         </Stack>
     )
 })

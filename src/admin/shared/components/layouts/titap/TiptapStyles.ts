@@ -61,5 +61,45 @@ export const tiptapContentStyles: SxProps<Theme> = {
         "& ul": { listStyleType: "disc", paddingLeft: "24px", my: "10px" },
         "& ol": { listStyleType: "decimal", paddingLeft: "24px", my: "10px" },
         "& li": { lineHeight: "1.6", mb: "4px" },
+        "& table": {
+            borderCollapse: "collapse",
+            tableLayout: "fixed",
+            width: "100%",
+            margin: "12px 0",
+            overflow: "hidden",
+            "& td, & th": {
+                minWidth: "1em",
+                border: "1px solid #919eab4d",
+                padding: "8px 10px",
+                verticalAlign: "top",
+                boxSizing: "border-box",
+                position: "relative",
+            },
+            "& th": {
+                fontWeight: "bold",
+                textAlign: "left",
+                backgroundColor: "#919eab14",
+            },
+            "& .selectedCell:after": {
+                background: "rgba(0, 167, 111, 0.08)",
+                content: '""',
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
+                pointerEvents: "none",
+                position: "absolute",
+                zIndex: 2,
+            },
+            "& .column-resize-handle": {
+                backgroundColor: "#00A76F",
+                bottom: "-2px",
+                position: "absolute",
+                right: "-2px",
+                pointerEvents: "none",
+                top: 0,
+                width: "4px",
+            }
+        },
     }
 };

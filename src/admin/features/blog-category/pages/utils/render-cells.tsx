@@ -4,7 +4,7 @@ import { GridActionsCell, GridActionsCellItem, GridRenderCellParams } from "@mui
 import { DeleteIcon, EditIcon, EyeIcon } from "@assets/icons/index";
 import { COLORS } from "../configs/constants";
 import { useDeleteBlogCategory, useForceDeleteBlogCategory, useRestoreBlogCategory } from "../hooks/useBlogCategory";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { prefixAdmin } from "@shared/constants/routes";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs';
@@ -20,6 +20,8 @@ interface RenderCreatedAtCellProps {
 export const RenderTitleCell = (params: GridRenderCellParams) => {
     const { name, avatar, altImage, _id } = params.row;
     const navigate = useNavigate();
+    const { module } = useParams();
+    const activeModule = module || "programming";
 
     return (
         <Box
@@ -46,11 +48,11 @@ export const RenderTitleCell = (params: GridRenderCellParams) => {
             <ListItemText
                 primary={
                     <Link
-                        href={`/${prefixAdmin}/blog-category/edit/${_id}`}
+                        href={`/${prefixAdmin}/${activeModule}/blog-category/edit/${_id}`}
                         className="product-title"
                         onClick={(e) => {
                             e.preventDefault();
-                            navigate(`/${prefixAdmin}/blog-category/edit/${_id}`);
+                            navigate(`/${prefixAdmin}/${activeModule}/blog-category/edit/${_id}`);
                         }}
                         underline="hover"
                         sx={{
@@ -156,13 +158,15 @@ export const RenderStatusCell = (params: GridRenderCellParams) => {
 // Actions
 export const getRenderActionsCell = (isTrash: boolean) => (params: GridRenderCellParams) => {
     const navigate = useNavigate();
+    const { module } = useParams();
+    const activeModule = module || "programming";
     const { mutate: deleteCategory } = useDeleteBlogCategory();
     const { mutate: forceDeleteCategory } = useForceDeleteBlogCategory();
     const { mutate: restoreCategory } = useRestoreBlogCategory();
     const _id = params.row._id;
 
     const handleEdit = () => {
-        navigate(`/${prefixAdmin}/blog-category/edit/${_id}`);
+        navigate(`/${prefixAdmin}/${activeModule}/blog-category/edit/${_id}`);
     };
 
     const handleDelete = () => {
@@ -210,7 +214,7 @@ export const getRenderActionsCell = (isTrash: boolean) => (params: GridRenderCel
                                 },
                             },
                         } as any)}
-                        onClick={() => navigate(`/${prefixAdmin}/blog-category/detail/${_id}`)}
+                        onClick={() => navigate(`/${prefixAdmin}/${activeModule}/blog-category/detail/${_id}`)}
                     />
                     <GridActionsCellItem
                         icon={<EditIcon />}

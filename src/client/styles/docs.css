@@ -1,0 +1,232 @@
+/* Docs Styling based on janet template */
+@import url("https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700");
+
+.docs-wrapper {
+    font-family: "Poppins", sans-serif;
+    color: #151515;
+    background-color: #ffffff;
+}
+
+.docs-wrapper h1, .docs-wrapper h2, .docs-wrapper h3, .docs-wrapper h4, .docs-wrapper h5 {
+    color: #252525;
+    font-weight: 600;
+}
+
+/* Hero Section */
+.hero-item-2 {
+    background-size: cover;
+    background-position: center;
+    padding: 100px 0;
+    position: relative;
+}
+
+.hero-item-2::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1;
+}
+
+.hero-slider-content-2 {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+.hero-slider-content-2 h2 {
+    font-size: 36px;
+    margin-bottom: 30px;
+    letter-spacing: 1px;
+}
+
+.hero-search-box {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.hero-search-box form {
+    display: flex;
+    background: #fff;
+    border-radius: 50px;
+    padding: 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.hero-search-box input {
+    flex: 1;
+    border: none;
+    padding: 15px 25px;
+    border-radius: 50px;
+    outline: none;
+}
+
+.docs-btn {
+    background-color: #00a69b;
+    color: #fff;
+    border: none;
+    padding: 10px 30px;
+    border-radius: 50px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.docs-btn:hover {
+    background-color: #008a81;
+    box-shadow: 0 5px 15px rgba(0, 166, 155, 0.3);
+}
+
+/* Information Area */
+.all-information-area {
+    background-color: #fff;
+}
+
+.single-information {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    transition: transform 0.3s ease;
+}
+
+.single-information:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.single-information h4 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.icon-wrap {
+    font-size: 24px;
+}
+
+.information {
+    list-style: none;
+    padding: 0;
+}
+
+.information li {
+    margin-bottom: 12px;
+}
+
+.information li a {
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.3s ease;
+}
+
+.information li a:hover {
+    color: #00a69b;
+}
+
+.badge-video {
+    background: #e6f7f6;
+    color: #00a69b;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.view-more {
+    color: #00a69b !important;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Sidebar */
+.single-sidebar-widget {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 10px;
+}
+
+.single-sidebar-widget h4 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #00a69b;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+.cat-list {
+    list-style: none;
+    padding: 0;
+}
+
+.cat-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.cat-list li a:hover {
+    color: #00a69b;
+    padding-left: 5px;
+}
+
+/* Detail Page Sidebar */
+.grey-bg {
+    background-color: #f3f3f3;
+}
+
+.side-nav {
+    list-style: none;
+    padding: 0;
+}
+
+.side-nav > li > a {
+    display: block;
+    padding: 15px 0;
+    font-size: 16px;
+    border-bottom: 1px solid #ddd;
+    color: #333;
+}
+
+.side-sub-nav {
+    list-style: none;
+    padding: 10px 0 10px 20px;
+}
+
+.side-sub-nav li a {
+    display: block;
+    padding: 8px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.side-sub-nav li a.active, .side-sub-nav li a:hover {
+    color: #00a69b;
+    font-weight: 600;
+}
+
+.border-teal {
+    border-color: #00a69b !important;
+    border-left-width: 4px !important;
+}
+
+.check-icon {
+    color: #00a69b;
+    margin-right: 10px;
+}
+
+.main-content h3 { font-size: 28px; margin-bottom: 20px; }
+.main-content h4 { font-size: 22px; margin-top: 30px; margin-bottom: 15px; }
+.main-content h5 { font-size: 18px; color: #00a69b; margin-bottom: 10px; }
+
+@media (max-width: 991px) {
+    .sticky-sidebar {
+        position: static !important;
+    }
+}

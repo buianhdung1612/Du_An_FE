@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { 
-    Box, Grid, Card, Typography, Button, TextField, 
+import {
+    Box, Grid, Card, Typography, Button, TextField,
     Stack, MenuItem, IconButton, Divider, CircularProgress,
     Autocomplete
 } from "@mui/material";
@@ -25,8 +25,8 @@ export const BookFormPage = () => {
 
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<CategoryBook[]>([]);
-    const [blogList, setBlogList] = useState<{_id: string, name: string}[]>([]);
-    const [mindMapList, setMindMapList] = useState<{_id: string, title: string}[]>([]);
+    const [blogList, setBlogList] = useState<{ _id: string, name: string }[]>([]);
+    const [mindMapList, setMindMapList] = useState<{ _id: string, title: string }[]>([]);
 
     const [formData, setFormData] = useState<any>({
         title: "",
@@ -45,13 +45,22 @@ export const BookFormPage = () => {
         try {
             // Fetch dependencies
             const catRes = await getCategoryBooks();
-            if (catRes.code === 200) setCategories(catRes.data);
+            if (catRes.code === 200) {
+                const data = catRes.data?.recordList || catRes.data;
+                setCategories(Array.isArray(data) ? data : []);
+            }
 
             const blogsRes = await apiApp.get("/api/v1/admin/article");
-            if (blogsRes.data.code === 200) setBlogList(blogsRes.data.data);
+            if (blogsRes.data.code === 200) {
+                const data = blogsRes.data.data?.recordList || blogsRes.data.data;
+                setBlogList(Array.isArray(data) ? data : []);
+            }
 
             const mmsRes = await apiApp.get("/api/v1/admin/mind-maps");
-            if (mmsRes.data.code === 200) setMindMapList(mmsRes.data.data);
+            if (mmsRes.data.code === 200) {
+                const data = mmsRes.data.data?.recordList || mmsRes.data.data;
+                setMindMapList(Array.isArray(data) ? data : []);
+            }
 
             if (isEdit) {
                 const res = await getBookDetail(id!);
@@ -138,18 +147,18 @@ export const BookFormPage = () => {
                     <Card sx={{ p: 3, borderRadius: '24px' }}>
                         <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>Thông tin cơ bản</Typography>
                         <Stack spacing={3}>
-                            <TextField fullWidth label="Tên cuốn sách" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
-                            <TextField fullWidth label="Tác giả" value={formData.author} onChange={(e) => setFormData({...formData, author: e.target.value})} />
-                            
+                            <TextField fullWidth label="Tên cuốn sách" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                            <TextField fullWidth label="Tác giả" value={formData.author} onChange={(e) => setFormData({ ...formData, author: e.target.value })} />
+
                             <Grid container spacing={2}>
                                 <Grid item xs={6}>
-                                    <TextField select fullWidth label="Danh mục" value={formData.categoryId} onChange={(e) => setFormData({...formData, categoryId: e.target.value})}>
+                                    <TextField select fullWidth label="Danh mục" value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}>
                                         <MenuItem value="">Chọn danh mục</MenuItem>
                                         {categories.map(cat => <MenuItem key={cat._id} value={cat._id}>{cat.name}</MenuItem>)}
                                     </TextField>
                                 </Grid>
                                 <Grid item xs={6}>
-                                    <TextField select fullWidth label="Trạng thái" value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                                    <TextField select fullWidth label="Trạng thái" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
                                         <MenuItem value="reading">Đang đọc</MenuItem>
                                         <MenuItem value="finished">Đã hoàn thành</MenuItem>
                                         <MenuItem value="archived">Lưu trữ</MenuItem>
@@ -157,20 +166,20 @@ export const BookFormPage = () => {
                                 </Grid>
                             </Grid>
 
-                            <TextField fullWidth multiline rows={4} label="Mô tả / Bài học tâm đắc" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
-                            <TextField fullWidth label="URL Ảnh bìa (Hoặc để trống)" value={formData.avatar} onChange={(e) => setFormData({...formData, avatar: e.target.value})} />
+                            <TextField fullWidth multiline rows={4} label="Mô tả / Bài học tâm đắc" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                            <TextField fullWidth label="URL Ảnh bìa (Hoặc để trống)" value={formData.avatar} onChange={(e) => setFormData({ ...formData, avatar: e.target.value })} />
                         </Stack>
                     </Card>
 
                     <Card sx={{ p: 3, borderRadius: '24px', mt: 3 }}>
                         <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>Liên kết tri thức</Typography>
                         <Stack spacing={3}>
-                            <TextField select fullWidth label="Liên kết bài Review (Blog)" value={formData.blogId} onChange={(e) => setFormData({...formData, blogId: e.target.value})}>
+                            <TextField select fullWidth label="Liên kết bài Review (Blog)" value={formData.blogId} onChange={(e) => setFormData({ ...formData, blogId: e.target.value })}>
                                 <MenuItem value="">Không liên kết</MenuItem>
                                 {blogList.map(blog => <MenuItem key={blog._id} value={blog._id}>{blog.name}</MenuItem>)}
                             </TextField>
 
-                            <TextField select fullWidth label="Liên kết Sơ đồ tóm tắt (Mind Map)" value={formData.mindMapId} onChange={(e) => setFormData({...formData, mindMapId: e.target.value})}>
+                            <TextField select fullWidth label="Liên kết Sơ đồ tóm tắt (Mind Map)" value={formData.mindMapId} onChange={(e) => setFormData({ ...formData, mindMapId: e.target.value })}>
                                 <MenuItem value="">Không liên kết</MenuItem>
                                 {mindMapList.map(mm => <MenuItem key={mm._id} value={mm._id}>{mm.title}</MenuItem>)}
                             </TextField>
@@ -188,51 +197,51 @@ export const BookFormPage = () => {
                         <Stack spacing={2}>
                             {formData.practices.map((practice: any, index: number) => (
                                 <Box key={index} sx={{ p: 2, bgcolor: 'action.hover', borderRadius: '16px', position: 'relative' }}>
-                                    <IconButton 
-                                        size="small" 
-                                        color="error" 
+                                    <IconButton
+                                        size="small"
+                                        color="error"
                                         sx={{ position: 'absolute', top: 8, right: 8 }}
                                         onClick={() => handleRemovePractice(index)}
                                     >
                                         <DeleteIcon fontSize="small" />
                                     </IconButton>
-                                    
+
                                     <Stack spacing={2}>
-                                        <TextField 
-                                            fullWidth 
-                                            size="small" 
-                                            label="Hành động" 
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            label="Hành động"
                                             placeholder="Ví dụ: Dậy sớm lúc 5h"
-                                            value={practice.title} 
-                                            onChange={(e) => handlePracticeChange(index, "title", e.target.value)} 
+                                            value={practice.title}
+                                            onChange={(e) => handlePracticeChange(index, "title", e.target.value)}
                                         />
                                         <Stack direction="row" spacing={1}>
-                                            <TextField 
-                                                select 
-                                                fullWidth 
-                                                size="small" 
-                                                label="Tần suất" 
-                                                value={practice.frequency} 
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                size="small"
+                                                label="Tần suất"
+                                                value={practice.frequency}
                                                 onChange={(e) => handlePracticeChange(index, "frequency", e.target.value)}
                                             >
                                                 <MenuItem value="daily">Hàng ngày</MenuItem>
                                                 <MenuItem value="weekly">Hàng tuần</MenuItem>
                                             </TextField>
-                                            <TextField 
-                                                select 
-                                                fullWidth 
-                                                size="small" 
-                                                label="Độ ưu tiên" 
-                                                value={practice.importance} 
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                size="small"
+                                                label="Độ ưu tiên"
+                                                value={practice.importance}
                                                 onChange={(e) => handlePracticeChange(index, "importance", e.target.value)}
                                             >
-                                                {[1,2,3,4,5].map(v => <MenuItem key={v} value={v}>{v}</MenuItem>)}
+                                                {[1, 2, 3, 4, 5].map(v => <MenuItem key={v} value={v}>{v}</MenuItem>)}
                                             </TextField>
                                         </Stack>
                                     </Stack>
                                 </Box>
                             ))}
-                            
+
                             {formData.practices.length === 0 && (
                                 <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
                                     Hãy thêm các hành động thực hành để chuyển hóa tri thức.

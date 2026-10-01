@@ -19,7 +19,8 @@ import { CategoryTreeSelect } from "../../../shared/components/ui/CategoryTreeSe
 import { useParams } from "react-router-dom";
 
 export const BlogCategoryEditPage = () => {
-    const { id } = useParams();
+    const { id, module } = useParams();
+    const activeModule = module || "programming";
     const [expandedDetail, setExpandedDetail] = useState(true);
 
     const toggle = (setter: Dispatch<SetStateAction<boolean>>) =>
@@ -29,7 +30,7 @@ export const BlogCategoryEditPage = () => {
     const localTheme = getBlogCategoryTheme(outerTheme);
 
     const { data: detailRes, isLoading: isLoadingDetail } = useBlogCategoryDetail(id);
-    const { data: nestedCategories = [] } = useNestedBlogCategories();
+    const { data: nestedCategories = [] } = useNestedBlogCategories({ module: activeModule });
 
     const { mutate: update, isPending: isUpdating } = useUpdateBlogCategory();
 
@@ -69,7 +70,8 @@ export const BlogCategoryEditPage = () => {
         const payload = {
             ...data,
             slug: generateSlug(data.name),
-            parent: data.parent === "" ? null : data.parent
+            parent: data.parent === "" ? null : data.parent,
+            module: activeModule
         };
 
         update({ id: id!, data: payload }, {
@@ -95,15 +97,18 @@ export const BlogCategoryEditPage = () => {
         );
     }
 
+    const displayTitle = activeModule === "english" ? "Chỉnh sửa danh mục bài viết Anh Văn" : "Chỉnh sửa danh mục bài viết Lập Trình";
+    const listTitle = activeModule === "english" ? "Danh mục bài viết Anh Văn" : "Danh mục bài viết Lập Trình";
+
     return (
         <>
             <div className="mb-[calc(5*var(--spacing))] gap-[calc(2*var(--spacing))] flex flex-col md:flex-row md:items-start md:justify-end">
                 <div className="mr-auto">
-                    <Title title="Chỉnh sửa danh mục bài viết" />
+                    <Title title={displayTitle} />
                     <Breadcrumb
                         items={[
                             { label: "Dashboard", to: "/" },
-                            { label: "Danh mục bài viết", to: `/${prefixAdmin}/blog-category/list` },
+                            { label: listTitle, to: `/${prefixAdmin}/${activeModule}/blog-category/list` },
                             { label: "Chỉnh sửa" }
                         ]}
                     />

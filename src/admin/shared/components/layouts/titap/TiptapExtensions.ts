@@ -26,7 +26,6 @@ export const getExtensions = (placeholder?: string) => [
     Highlight.configure({ multicolor: true }),
     Color,
     StarterKit.configure({
-        history: true,
         heading: {
             levels: [1, 2, 3],
         },
@@ -37,7 +36,9 @@ export const getExtensions = (placeholder?: string) => [
     TextAlign.configure({
         types: ['heading', 'paragraph'],
     }),
-    Link.configure({
+    Link.extend({
+        inclusive: false,
+    }).configure({
         openOnClick: false,
         autolink: true,
         defaultProtocol: 'https',

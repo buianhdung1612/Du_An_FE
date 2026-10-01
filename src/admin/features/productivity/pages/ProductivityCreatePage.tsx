@@ -1,5 +1,5 @@
-import { Box, TextField, Button, Grid, Typography, Stack, alpha, useTheme, IconButton, ThemeProvider, createTheme, Breadcrumbs, Link, Card } from "@mui/material";
-import { useState, useMemo } from "react";
+import { Box, TextField, Button, Grid, Typography, Stack, alpha, useTheme, IconButton, ThemeProvider, createTheme } from "@mui/material";
+import { useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createPlan } from "../api/productivity.api";
@@ -9,13 +9,64 @@ import { prefixAdmin } from "../../../shared/constants/routes";
 import { Title } from "../../../shared/components/ui/Title";
 import { Breadcrumb } from "../../../shared/components/ui/Breadcrumb";
 import { CollapsibleCard } from "../../../shared/components/ui/CollapsibleCard";
+import { useForm, useFieldArray } from "react-hook-form";
+
+const TacticList = ({ control, register, gIdx }: any) => {
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: `goals.${gIdx}.tactics` as const
+    });
+
+    return (
+        <>
+            <Typography variant="subtitle2" sx={{ mb: 2, color: '#637381', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                Hành động thực thi hàng tuần
+            </Typography>
+
+            <Stack spacing={2}>
+                {fields.map((tactic, tIdx) => (
+                    <Stack key={tactic.id} direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                        <Typography variant="body2" sx={{ minWidth: 20, fontWeight: 700, color: 'text.disabled' }}>
+                            {tIdx + 1}.
+                        </Typography>
+                        <TextField
+                            placeholder="Chiến thuật..."
+                            sx={{ flex: 1 }}
+                            {...register(`goals.${gIdx}.tactics.${tIdx}.title` as const)}
+                        />
+                        <Box sx={{ width: 110 }}>
+                            <TextField
+                                label="Lần/tuần"
+                                type="number"
+                                fullWidth
+                                {...register(`goals.${gIdx}.tactics.${tIdx}.targetPerWeek` as const, { valueAsNumber: true })}
+                            />
+                        </Box>
+                        {fields.length > 1 && (
+                            <IconButton size="small" onClick={() => remove(tIdx)}>
+                                <Icon icon="solar:close-circle-bold" />
+                            </IconButton>
+                        )}
+                    </Stack>
+                ))}
+            </Stack>
+
+            <Button
+                size="small"
+                startIcon={<Icon icon="solar:add-circle-bold" />}
+                onClick={() => append({ title: "", targetPerWeek: 7, _id: undefined })}
+                sx={{ mt: 2.5, fontWeight: 700, color: 'primary.main' }}
+            >
+                Thêm chiến thuật
+            </Button>
+        </>
+    );
+};
 
 export const ProductivityCreatePage = () => {
     const theme = useTheme();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [title, setTitle] = useState("Bứt phá 12 Tuần");
-    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [expandedInfo, setExpandedInfo] = useState(true);
 
     const calculateEndDate = (dateStr: string) => {
@@ -24,17 +75,25 @@ export const ProductivityCreatePage = () => {
         return date.toISOString().split('T', 1)[0];
     };
 
-    const [endDate, setEndDate] = useState(calculateEndDate(new Date().toISOString().split('T')[0]));
-
-    const [goals, setGoals] = useState([
-        {
-            id: crypto.randomUUID(),
-            title: "",
-            tactics: [{ id: crypto.randomUUID(), title: "", targetPerWeek: 7 }]
+    const { register, control, handleSubmit, setValue } = useForm({
+        defaultValues: {
+            title: "Bứt phá 12 Tuần",
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: calculateEndDate(new Date().toISOString().split('T')[0]),
+            goals: [
+                {
+                    title: "",
+                    tactics: [{ title: "", targetPerWeek: 7, _id: undefined }]
+                }
+            ] as any[]
         }
-    ]);
+    });
 
-    // Local theme override matching ProductCreatePage precisely
+    const { fields: goalFields, append: appendGoal, remove: removeGoal } = useFieldArray({
+        control,
+        name: "goals"
+    });
+
     const localTheme = useMemo(() => createTheme(theme, {
         components: {
             MuiCard: {
@@ -82,65 +141,17 @@ export const ProductivityCreatePage = () => {
         }
     });
 
-    const handleAddGoal = () => {
-        setGoals([...goals, {
-            id: crypto.randomUUID(),
-            title: "",
-            tactics: [{ id: crypto.randomUUID(), title: "", targetPerWeek: 7 }]
-        }]);
-    };
-
-    const handleRemoveGoal = (goalId: string) => {
-        setGoals(goals.filter(g => g.id !== goalId));
-    };
-
-    const handleAddTactic = (goalId: string) => {
-        setGoals(goals.map(g => {
-            if (g.id === goalId) {
-                return { ...g, tactics: [...g.tactics, { id: crypto.randomUUID(), title: "", targetPerWeek: 7 }] };
-            }
-            return g;
-        }));
-    };
-
-    const handleRemoveTactic = (goalId: string, tacticId: string) => {
-        setGoals(goals.map(g => {
-            if (g.id === goalId) {
-                return { ...g, tactics: g.tactics.filter(t => t.id !== tacticId) };
-            }
-            return g;
-        }));
-    };
-
-    const handleUpdateGoalTitle = (goalId: string, value: string) => {
-        setGoals(goals.map(g => g.id === goalId ? { ...g, title: value } : g));
-    };
-
-    const handleUpdateTactic = (goalId: string, tacticId: string, field: string, value: any) => {
-        setGoals(goals.map(g => {
-            if (g.id === goalId) {
-                return {
-                    ...g,
-                    tactics: g.tactics.map(t => t.id === tacticId ? { ...t, [field]: value } : t)
-                };
-            }
-            return g;
-        }));
-    };
-
-    const handleSubmit = () => {
-        const validGoals = goals.filter(g => g.title).map(g => {
+    const onFormSubmit = (data: any) => {
+        const validGoals = data.goals.filter((g: any) => g.title).map((g: any) => {
             const goalData: any = {
                 title: g.title,
-                tactics: g.tactics.filter(t => t.title).map(t => ({
+                tactics: g.tactics.filter((t: any) => t.title).map((t: any) => ({
                     title: t.title,
                     targetPerWeek: t.targetPerWeek,
-                    _id: (t.id && t.id.length === 24) ? t.id : undefined
+                    _id: (t._id && t._id.length === 24) ? t._id : undefined
                 }))
             };
-            // Only keep real Mongo IDs (exactly 24 chars)
-            if (g.id && g.id.length === 24) goalData._id = g.id;
-
+            if (g._id && g._id.length === 24) goalData._id = g._id;
             return goalData;
         });
 
@@ -150,9 +161,9 @@ export const ProductivityCreatePage = () => {
         }
 
         const planPayload = {
-            title,
-            startDate,
-            endDate,
+            title: data.title,
+            startDate: data.startDate,
+            endDate: data.endDate,
             goals: validGoals
         };
         mutation.mutate(planPayload);
@@ -161,7 +172,6 @@ export const ProductivityCreatePage = () => {
     return (
         <ThemeProvider theme={localTheme}>
             <Box sx={{ pb: 10 }}>
-                {/* Header Area */}
                 <Box sx={{ mb: 5, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'stretch', md: 'flex-start' }, justifyContent: 'space-between', gap: 2 }}>
                     <Box>
                         <Title title={"Lập kế hoạch Năm 12 Tuần"} />
@@ -184,7 +194,7 @@ export const ProductivityCreatePage = () => {
                         </Button>
                         <Button
                             variant="contained"
-                            onClick={handleSubmit}
+                            onClick={handleSubmit(onFormSubmit)}
                             disabled={mutation.isPending}
                             sx={{
                                 borderRadius: '8px',
@@ -214,8 +224,7 @@ export const ProductivityCreatePage = () => {
                                     <TextField
                                         label="Tên kế hoạch"
                                         fullWidth
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
+                                        {...register("title")}
                                     />
                                 </Grid>
                                 <Grid item xs={12} md={3}>
@@ -223,12 +232,11 @@ export const ProductivityCreatePage = () => {
                                         label="Ngày bắt đầu"
                                         type="date"
                                         fullWidth
-                                        value={startDate}
-                                        onChange={(e) => {
-                                            const newStart = e.target.value;
-                                            setStartDate(newStart);
-                                            setEndDate(calculateEndDate(newStart));
-                                        }}
+                                        {...register("startDate", {
+                                            onChange: (e) => {
+                                                setValue("endDate", calculateEndDate(e.target.value));
+                                            }
+                                        })}
                                         InputLabelProps={{ shrink: true }}
                                     />
                                 </Grid>
@@ -237,8 +245,7 @@ export const ProductivityCreatePage = () => {
                                         label="Ngày kết thúc (Dự kiến)"
                                         type="date"
                                         fullWidth
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
+                                        {...register("endDate")}
                                         InputLabelProps={{ shrink: true }}
                                         helperText="Mặc định 12 tuần"
                                     />
@@ -247,7 +254,7 @@ export const ProductivityCreatePage = () => {
                         </Box>
                     </CollapsibleCard>
 
-                    {goals.map((goal, gIdx) => (
+                    {goalFields.map((goal, gIdx) => (
                         <CollapsibleCard
                             key={goal.id}
                             title={`MỤC TIÊU CHIẾN LƯỢC ${gIdx + 1}`}
@@ -260,8 +267,7 @@ export const ProductivityCreatePage = () => {
                                     <TextField
                                         placeholder="Ví dụ: Đạt mốc thu nhập thụ động 10tr/tháng"
                                         fullWidth
-                                        value={goal.title}
-                                        onChange={(e) => handleUpdateGoalTitle(goal.id, e.target.value)}
+                                        {...register(`goals.${gIdx}.title` as const)}
                                         sx={{
                                             flex: 1,
                                             '& .MuiOutlinedInput-root': {
@@ -269,11 +275,11 @@ export const ProductivityCreatePage = () => {
                                             }
                                         }}
                                     />
-                                    {goals.length > 1 && (
+                                    {goalFields.length > 1 && (
                                         <IconButton
                                             size="medium"
                                             color="error"
-                                            onClick={() => handleRemoveGoal(goal.id)}
+                                            onClick={() => removeGoal(gIdx)}
                                             sx={{ bgcolor: alpha(theme.palette.error.main, 0.08), '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.16) } }}
                                         >
                                             <Icon icon="solar:trash-bin-minimalistic-bold" />
@@ -281,48 +287,8 @@ export const ProductivityCreatePage = () => {
                                     )}
                                 </Stack>
 
-                                <Typography variant="subtitle2" sx={{ mb: 2, color: '#637381', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                                    Hành động thực thi hàng tuần
-                                </Typography>
+                                <TacticList control={control} register={register} gIdx={gIdx} />
 
-                                <Stack spacing={2}>
-                                    {goal.tactics.map((tactic, tIdx) => (
-                                        <Stack key={tactic.id} direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
-                                            <Typography variant="body2" sx={{ minWidth: 20, fontWeight: 700, color: 'text.disabled' }}>
-                                                {tIdx + 1}.
-                                            </Typography>
-                                            <TextField
-                                                placeholder="Chiến thuật..."
-                                                sx={{ flex: 1 }}
-                                                value={tactic.title}
-                                                onChange={(e) => handleUpdateTactic(goal.id, tactic.id, 'title', e.target.value)}
-                                            />
-                                            <Box sx={{ width: 110 }}>
-                                                <TextField
-                                                    label="Lần/tuần"
-                                                    type="number"
-                                                    fullWidth
-                                                    value={tactic.targetPerWeek}
-                                                    onChange={(e) => handleUpdateTactic(goal.id, tactic.id, 'targetPerWeek', Number(e.target.value))}
-                                                />
-                                            </Box>
-                                            {goal.tactics.length > 1 && (
-                                                <IconButton size="small" onClick={() => handleRemoveTactic(goal.id, tactic.id)}>
-                                                    <Icon icon="solar:close-circle-bold" />
-                                                </IconButton>
-                                            )}
-                                        </Stack>
-                                    ))}
-                                </Stack>
-
-                                <Button
-                                    size="small"
-                                    startIcon={<Icon icon="solar:add-circle-bold" />}
-                                    onClick={() => handleAddTactic(goal.id)}
-                                    sx={{ mt: 2.5, fontWeight: 700, color: 'primary.main' }}
-                                >
-                                    Thêm chiến thuật
-                                </Button>
                             </Box>
                         </CollapsibleCard>
                     ))}
@@ -332,7 +298,7 @@ export const ProductivityCreatePage = () => {
                         variant="outlined"
                         color="inherit"
                         startIcon={<Icon icon="solar:magic-stick-3-bold-duotone" width={24} />}
-                        onClick={handleAddGoal}
+                        onClick={() => appendGoal({ title: "", tactics: [{ title: "", targetPerWeek: 7, _id: undefined }] })}
                         sx={{
                             borderRadius: '16px',
                             py: 2.5,

@@ -14,7 +14,7 @@ import {
     Divider
 } from "@mui/material"
 import { prefixAdmin } from "../../../shared/constants/routes"
-import { ArrowIcon, EditIcon, GoLiveIcon, UploadIcon, DraftIcon, ArchivedIcon, ShareIcon, FacebookIcon, InstagramIcon } from "../../assets/icons"
+import { ArrowIcon, EditIcon, GoLiveIcon, UploadIcon, DraftIcon, ArchivedIcon, ShareIcon, FacebookIcon, InstagramIcon } from "../../../assets/icons"
 import { Link, useParams, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import { useBlogDetail, useUpdateBlog } from "./hooks/useBlog"
@@ -39,7 +39,8 @@ const getItemStyle = (current: BlogStatus, value: BlogStatus) => ({
 })
 
 export const BlogDetailPage = () => {
-    const { id } = useParams();
+    const { id, module } = useParams();
+    const activeModule = module || "programming";
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
@@ -104,7 +105,7 @@ export const BlogDetailPage = () => {
                     {/* Back */}
                     <Button
                         component={Link}
-                        to={`/${prefixAdmin}/blog/list`}
+                        to={`/${prefixAdmin}/${activeModule}/blog/list`}
                         color="inherit"
                         startIcon={
                             <ArrowIcon sx={{ rotate: "90deg", width: 16, height: 16 }} />
@@ -122,9 +123,9 @@ export const BlogDetailPage = () => {
                     >
                         Quay lại
                     </Button>
-
+ 
                     <Box sx={{ flex: 1 }} />
-
+ 
                     <Box sx={{ display: "flex", gap: "12px" }}>
                         {/* Actions */}
                         {status === 'published' && (
@@ -134,9 +135,9 @@ export const BlogDetailPage = () => {
                                 </IconButton>
                             </Tooltip>
                         )}
-
+ 
                         <Tooltip title="Chỉnh sửa">
-                            <IconButton onClick={() => navigate(`/${prefixAdmin}/blog/edit/${blog.id}`)}>
+                            <IconButton onClick={() => navigate(`/${prefixAdmin}/${activeModule}/blog/edit/${blog.id}`)}>
                                 <EditIcon sx={{ mr: 0, color: "var(--palette-text-secondary)" }} />
                             </IconButton>
                         </Tooltip>
@@ -318,6 +319,49 @@ export const BlogDetailPage = () => {
                 </Typography>
 
                 <Divider sx={{ mb: 4 }} />
+
+                {blog.keyPoints && blog.keyPoints.length > 0 && (
+                    <Box sx={{ 
+                        p: 3, 
+                        mb: 4, 
+                        borderRadius: '16px', 
+                        bgcolor: 'rgba(145, 158, 171, 0.04)',
+                        border: '1px solid var(--palette-divider)',
+                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                    }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+                            <Box component="span" sx={{ fontSize: '1.5rem', lineHeight: 1 }}>💡</Box>
+                            <Typography variant="subtitle1" fontWeight={700} color="text.primary">
+                                Điểm cốt lõi / Tóm tắt nhanh
+                            </Typography>
+                        </Stack>
+                        <Stack spacing={1.5}>
+                            {blog.keyPoints.map((point: string, idx: number) => (
+                                <Stack key={idx} direction="row" spacing={1.5} alignItems="flex-start">
+                                    <Box sx={{ 
+                                        width: 20, 
+                                        height: 20, 
+                                        borderRadius: '50%', 
+                                        bgcolor: 'rgba(0, 167, 111, 0.08)', 
+                                        color: '#00A76F', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        mt: 0.2
+                                    }}>
+                                        {idx + 1}
+                                    </Box>
+                                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                                        {point}
+                                    </Typography>
+                                </Stack>
+                            ))}
+                        </Stack>
+                    </Box>
+                )}
 
                 <Box className="prose lg:prose-xl" sx={{
                     color: 'var(--palette-text-primary)',

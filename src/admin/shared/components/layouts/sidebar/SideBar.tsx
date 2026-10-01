@@ -37,8 +37,8 @@ export const SideBar = () => {
                         <div className="absolute inset-0 h-full overflow-y-auto sidebar-scroll">
                             <nav className="text-[#637381] px-[16px]">
                                 <ul>
-                                    <NavGroup title={"admin.overview"} data={menuOverviewData} />
-                                    <NavGroup title={"admin.management"} data={menuManagementData} />
+                                    <NavGroup title={"Tổng quan"} data={menuOverviewData} />
+                                    <NavGroup title={"Quản lý"} data={menuManagementData} />
                                 </ul>
                             </nav>
                         </div>

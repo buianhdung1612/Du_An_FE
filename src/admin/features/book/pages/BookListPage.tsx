@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { 
-    Box, Grid, Card, Typography, Button, IconButton, 
+import {
+    Box, Grid, Card, Typography, Button, IconButton,
     Stack, Chip, CircularProgress, TextField, MenuItem,
     CardMedia, CardContent, CardActionArea, Fab, Tooltip
 } from "@mui/material";
@@ -27,12 +27,18 @@ export const BookListPage = () => {
             const params: any = {};
             if (filter.categoryId !== "all") params.categoryId = filter.categoryId;
             if (filter.status !== "all") params.status = filter.status;
-            
+
             const res = await getBooks(params);
-            if (res.code === 200) setBooks(res.data);
+            if (res.code === 200) {
+                const data = res.data.recordList || res.data;
+                setBooks(Array.isArray(data) ? data : []);
+            }
 
             const catRes = await getCategoryBooks();
-            if (catRes.code === 200) setCategories(catRes.data);
+            if (catRes.code === 200) {
+                const data = catRes.data.recordList || catRes.data;
+                setCategories(Array.isArray(data) ? data : []);
+            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -66,15 +72,15 @@ export const BookListPage = () => {
                     />
                 </Box>
                 <Stack direction="row" spacing={2}>
-                    <Button 
-                        variant="outlined" 
+                    <Button
+                        variant="outlined"
                         onClick={() => navigate(`/${prefixAdmin}/books/categories`)}
                         sx={{ borderRadius: "10px", borderColor: '#1C252E', color: '#1C252E' }}
                     >
                         Quản lý danh mục
                     </Button>
-                    <Button 
-                        variant="contained" 
+                    <Button
+                        variant="contained"
                         startIcon={<AddIcon />}
                         onClick={() => navigate(`/${prefixAdmin}/books/create`)}
                         sx={{ borderRadius: "10px", bgcolor: '#1C252E' }}
@@ -130,8 +136,8 @@ export const BookListPage = () => {
                             const status = getStatusLabel(book.status);
                             return (
                                 <Grid item xs={12} sm={6} md={3} key={book._id}>
-                                    <Card sx={{ 
-                                        borderRadius: "16px", 
+                                    <Card sx={{
+                                        borderRadius: "16px",
                                         height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
@@ -171,8 +177,8 @@ export const BookListPage = () => {
             )}
 
             <Tooltip title="Thêm sách mới">
-                <Fab 
-                    color="primary" 
+                <Fab
+                    color="primary"
                     sx={{ position: 'fixed', bottom: 32, right: 32, bgcolor: '#1C252E', '&:hover': { bgcolor: '#454f5b' } }}
                     onClick={() => navigate(`/${prefixAdmin}/books/create`)}
                 >

@@ -82,7 +82,7 @@ export const TwelveWeekHeader = ({ plan }: { plan: any }) => {
                     </Stack>
                 </Box>
 
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 3, sm: 5 }} sx={{ minWidth: { md: 400 }, width: '100%' }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 3, sm: 5 }} sx={{ minWidth: { md: 400 } }}>
                     <Box sx={{ textAlign: 'center' }}>
                         <Typography variant="h2" fontWeight={900}>
                             {overallProgress}%

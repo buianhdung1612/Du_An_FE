@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
+import { useParams } from 'react-router-dom';
 import {
     Card,
     Box,
@@ -36,6 +37,8 @@ interface BlogCategoryListProps {
 }
 
 export const BlogCategoryList = ({ isTrash = false, onEdit }: BlogCategoryListProps) => {
+    const { module } = useParams();
+    const activeModule = module || "programming";
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -50,6 +53,7 @@ export const BlogCategoryList = ({ isTrash = false, onEdit }: BlogCategoryListPr
         keyword: search,
         status: status.length > 0 ? status.join(',') : undefined,
         is_trash: isTrash || undefined,
+        module: activeModule
     };
 
     const { data: res, isLoading } = useBlogCategories(params);

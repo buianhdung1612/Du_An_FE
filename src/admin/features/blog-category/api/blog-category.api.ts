@@ -14,8 +14,8 @@ export const getCategories = async (params?: any): Promise<ApiResponse<any>> => 
 };
 
 /** Lấy danh mục cây (nested) */
-export const getNestedCategories = async (): Promise<ApiResponse<CategoryNode[]>> => {
-    const response = await apiApp.get(`${BASE_URL}/nested`);
+export const getNestedCategories = async (params?: any): Promise<ApiResponse<CategoryNode[]>> => {
+    const response = await apiApp.get(`${BASE_URL}/nested`, { params });
     return response.data;
 };
 

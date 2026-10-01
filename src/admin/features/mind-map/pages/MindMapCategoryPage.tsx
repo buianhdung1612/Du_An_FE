@@ -15,8 +15,12 @@ import {
     useUpdateMindMapCategory 
 } from "./hooks/useMindMapCategory";
 import { toast } from "react-toastify";
+import { useParams } from "react-router-dom";
 
 export const MindMapCategoryPage = () => {
+    const { module } = useParams();
+    const activeModule = module || "programming";
+
     const [isTrash, setIsTrash] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<any>(null);
@@ -41,8 +45,13 @@ export const MindMapCategoryPage = () => {
     };
 
     const handleSubmit = async () => {
+        const payload = {
+            ...formData,
+            module: activeModule
+        };
+
         if (selectedCategory) {
-            updateMutation.mutate({ id: selectedCategory._id, data: formData }, {
+            updateMutation.mutate({ id: selectedCategory._id, data: payload }, {
                 onSuccess: (res: any) => {
                     if (res.success) {
                         toast.success("Cập nhật thành công");
@@ -53,7 +62,7 @@ export const MindMapCategoryPage = () => {
                 }
             });
         } else {
-            createMutation.mutate(formData, {
+            createMutation.mutate(payload, {
                 onSuccess: (res: any) => {
                     if (res.success) {
                         toast.success("Tạo mới thành công");
@@ -66,15 +75,17 @@ export const MindMapCategoryPage = () => {
         }
     };
 
+    const displayTitle = activeModule === "english" ? "Danh mục sơ đồ tư duy Anh Văn" : "Danh mục Sơ đồ tư duy Lập trình";
+
     return (
         <>
             <div className="mb-[calc(5*var(--spacing))] gap-[calc(2*var(--spacing))] flex flex-col md:flex-row md:items-start md:justify-end">
                 <div className="mr-auto">
-                    <Title title={"Danh mục Sơ đồ tư duy"} />
+                    <Title title={displayTitle} />
                     <Breadcrumb
                         items={[
                             { label: "Bảng điều khiển", to: "/" },
-                            { label: "Sơ đồ tư duy", to: `/${prefixAdmin}/mind-maps` },
+                            { label: displayTitle, to: `/${prefixAdmin}/${activeModule}/mind-maps` },
                             { label: "Danh mục" }
                         ]}
                     />

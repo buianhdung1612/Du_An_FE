@@ -109,7 +109,7 @@ export const LoginPage = () => {
                             </ul>
                         </div>
                         {/* Right */}
-                        <div className="flex flex-col items-center justify-center flex-1 py-[80px] px-[16px]">
+                        <div className="flex flex-col items-center justify-center flex-1 py-[80px] px-[16px] bg-white">
                             <Box sx={{ width: "100%", maxWidth: "420px", display: "flex", flexDirection: "column" }}>
                                 <h5 className="text-[1.1875rem] font-[700] mb-[calc(5*var(--spacing))]">Đăng nhập vào tài khoản của bạn</h5>
                                 <form onSubmit={handleSubmit(onSubmit)}>

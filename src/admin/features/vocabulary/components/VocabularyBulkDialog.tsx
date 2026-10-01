@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
     Button, TextField, Typography, IconButton, Stack,
-    CircularProgress, LinearProgress, Box, Autocomplete
+    CircularProgress, LinearProgress, Box, Autocomplete, createFilterOptions
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { createVocabBulkAI } from "../api/vocabulary.api";
-import { getVocabularyTopics, VocabularyTopic } from "../api/vocabulary-topic.api";
+import { getVocabularyTopics, createVocabularyTopic, VocabularyTopic } from "../api/vocabulary-topic.api";
 import { toast } from "react-toastify";
 
 interface Props {
@@ -17,6 +17,7 @@ interface Props {
 }
 
 export const VocabularyBulkDialog: React.FC<Props> = ({ open, onClose, onSuccess }) => {
+    const filter = createFilterOptions<VocabularyTopic>();
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -109,11 +110,45 @@ export const VocabularyBulkDialog: React.FC<Props> = ({ open, onClose, onSuccess
 
                     <Autocomplete
                         options={topics}
-                        getOptionLabel={(option) => option.title}
+                        getOptionLabel={(option) => {
+                            if (typeof option === 'string') return option;
+                            if ((option as any).inputValue) return (option as any).inputValue;
+                            return option.title;
+                        }}
+                        filterOptions={(options, params) => {
+                            const filtered = filter(options, params);
+                            const { inputValue } = params;
+                            const isExisting = options.some((option) => inputValue === option.title);
+                            if (inputValue !== '' && !isExisting) {
+                                filtered.push({
+                                    inputValue,
+                                    title: `+ Tạo chủ đề mới: "${inputValue}"`,
+                                    _id: "new"
+                                } as any);
+                            }
+                            return filtered;
+                        }}
                         value={(Array.isArray(topics) ? topics : []).find(t => t._id === selectedTopicId) || null}
-                        onChange={(_e, newValue) => setSelectedTopicId(newValue?._id || "")}
+                        onChange={async (_e, newValue: any) => {
+                            if (newValue && newValue.inputValue) {
+                                try {
+                                    const res = await createVocabularyTopic({ title: newValue.inputValue });
+                                    if (res.code === 200) {
+                                        toast.success("Tạo chủ đề thành công");
+                                        setTopics([...topics, res.data]);
+                                        setSelectedTopicId(res.data._id);
+                                    } else {
+                                        toast.error("Lỗi: " + res.message);
+                                    }
+                                } catch {
+                                    toast.error("Lỗi khi tạo chủ đề");
+                                }
+                            } else {
+                                setSelectedTopicId(newValue?._id || "");
+                            }
+                        }}
                         renderInput={(params) => (
-                            <TextField {...params} label="Chủ đề (Topic) cho toàn bộ danh sách" size="small" placeholder="Chọn topic để AI gen ví dụ theo ngữ cảnh..." />
+                            <TextField {...params} label="Chủ đề (Topic) cho toàn bộ danh sách" size="small" placeholder="Chọn hoặc tạo topic mới để AI gen ví dụ theo ngữ cảnh..." />
                         )}
                         disabled={loading}
                         sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}

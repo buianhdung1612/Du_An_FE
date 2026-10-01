@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Button, Grid, Card, CardContent, Stack, useTheme, IconButton, Chip, CircularProgress } from '@mui/material';
 import { Icon } from '@iconify/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getMindMaps } from '../api/mind-map.api';
 import { getCategoryMindMaps, CategoryMindMap } from '../api/category-mindmap.api';
@@ -12,33 +12,46 @@ import { TextField, MenuItem } from '@mui/material';
 export const MindMapListPage = () => {
     const theme = useTheme();
     const navigate = useNavigate();
+    const { module } = useParams();
+    const activeModule = module || "programming";
+
     const [selectedCategoryId, setSelectedCategoryId] = React.useState('all');
     const [categories, setCategories] = React.useState<CategoryMindMap[]>([]);
 
     const { data: mindMaps, isLoading } = useQuery({
-        queryKey: ['mind-maps', selectedCategoryId],
-        queryFn: () => getMindMaps(selectedCategoryId !== 'all' ? { categoryId: selectedCategoryId } : {})
+        queryKey: ['mind-maps', selectedCategoryId, activeModule],
+        queryFn: () => getMindMaps({
+            ...(selectedCategoryId !== 'all' ? { categoryId: selectedCategoryId } : {}),
+            module: activeModule
+        })
     });
 
     React.useEffect(() => {
-        getCategoryMindMaps().then(res => {
-            if (res.code === 200) setCategories(res.data);
+        getCategoryMindMaps({ module: activeModule }).then(res => {
+            if (res.code === 200) {
+                // Handle both array and paginated object formats
+                const data = res.data.recordList || res.data;
+                setCategories(Array.isArray(data) ? data : []);
+            }
         });
-    }, []);
+    }, [activeModule]);
 
     if (isLoading) return <Box p={4} sx={{ display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
+
+    const displayTitle = activeModule === "english" ? "Sơ Đồ Tư Duy Anh Văn" : "Sơ Đồ Tư Duy Lập Trình";
+    const displaySub = activeModule === "english" ? "Quản lý và sáng tạo các ý tưởng tiếng Anh của bạn." : "Quản lý và sáng tạo các ý tưởng lập trình của bạn.";
 
     return (
         <Box sx={{ p: { xs: 1, md: 4 } }}>
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', md: 'center' }} sx={{ mb: 4 }} spacing={2}>
                 <Box>
-                    <Typography variant="h3" fontWeight={800} sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>Sơ Đồ Tư Duy</Typography>
-                    <Typography variant="body1" color="text.secondary">Quản lý và sáng tạo các ý tưởng của bạn.</Typography>
+                    <Typography variant="h3" fontWeight={800} sx={{ fontSize: { xs: '1.5rem', md: '2rem' } }}>{displayTitle}</Typography>
+                    <Typography variant="body1" color="text.secondary">{displaySub}</Typography>
                 </Box>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                     <Button
                         variant="outlined"
-                        onClick={() => navigate(`/${prefixAdmin}/mind-maps/categories`)}
+                        onClick={() => navigate(`/${prefixAdmin}/${activeModule}/mind-maps/categories`)}
                         sx={{ borderRadius: '12px', borderColor: '#1C252E', color: '#1C252E' }}
                     >
                         Quản lý danh mục
@@ -46,7 +59,7 @@ export const MindMapListPage = () => {
                     <Button
                         variant="contained"
                         startIcon={<Icon icon="solar:add-circle-bold" />}
-                        onClick={() => navigate(`/${prefixAdmin}/mind-maps/create`)}
+                        onClick={() => navigate(`/${prefixAdmin}/${activeModule}/mind-maps/create`)}
                         sx={{ borderRadius: '12px', px: 3, bgcolor: '#1C252E' }}
                     >
                         Tạo sơ đồ mới
@@ -91,7 +104,7 @@ export const MindMapListPage = () => {
                                         <Icon icon="solar:hierarchy-bold-duotone" width={32} />
                                     </Box>
                                     <Stack direction="row" spacing={0.5}>
-                                        <IconButton onClick={() => navigate(`/${prefixAdmin}/mind-maps/edit/${map._id}`)}>
+                                        <IconButton onClick={() => navigate(`/${prefixAdmin}/${activeModule}/mind-maps/edit/${map._id}`)}>
                                             <Icon icon="solar:pen-bold" />
                                         </IconButton>
                                     </Stack>

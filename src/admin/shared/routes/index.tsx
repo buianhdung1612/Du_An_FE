@@ -67,6 +67,10 @@ const NotificationListPage = lazy(() => import("../../features/notification/page
 const VocabularyListPage = lazy(() => import("../../features/vocabulary/pages/VocabularyListPage").then(m => ({ default: m.VocabularyListPage })));
 const VocabularyStudyPage = lazy(() => import("../../features/vocabulary/pages/VocabularyStudyPage").then(m => ({ default: m.VocabularyStudyPage })));
 const VocabularyTopicListPage = lazy(() => import("../../features/vocabulary/pages/VocabularyTopicListPage").then(m => ({ default: m.VocabularyTopicListPage })));
+const PhrasalVerbMindmapPage = lazy(() => import("../../features/vocabulary/pages/PhrasalVerbMindmapPage").then(m => ({ default: m.PhrasalVerbMindmapPage })));
+const PhrasalVerbListPage = lazy(() => import("../../features/vocabulary/pages/PhrasalVerbListPage").then(m => ({ default: m.PhrasalVerbListPage })));
+const VocabularyStatisticsPage = lazy(() => import("../../features/vocabulary/pages/VocabularyStatisticsPage").then(m => ({ default: m.VocabularyStatisticsPage })));
+const WritingSkillsPage = lazy(() => import("../../features/writing/pages/WritingSkillsPage").then(m => ({ default: m.WritingSkillsPage })));
 const ProductivityPage = lazy(() => import("../../features/productivity/pages/ProductivityPage").then(m => ({ default: m.ProductivityPage })));
 const ProductivityCreatePage = lazy(() => import("../../features/productivity/pages/ProductivityCreatePage").then(m => ({ default: m.ProductivityCreatePage })));
 const ProductivityEditPage = lazy(() => import("../../features/productivity/pages/ProductivityEditPage").then(m => ({ default: m.ProductivityEditPage })));
@@ -83,8 +87,25 @@ const BookFormPage = lazy(() => import("../../features/book/pages/BookFormPage")
 const BookCategoryPage = lazy(() => import("../../features/book/pages/BookCategoryPage").then(m => ({ default: m.BookCategoryPage })));
 const NoteListPage = lazy(() => import("../../features/note/pages/NoteListPage").then(m => ({ default: m.NoteListPage })));
 const NoteEditorPage = lazy(() => import("../../features/note/pages/NoteEditorPage").then(m => ({ default: m.NoteEditorPage })));
+const LifestylePage = lazy(() => import("../../features/lifestyle/pages/LifestylePage").then(m => ({ default: m.LifestylePage })));
+const FinanceDashboard = lazy(() => import("../../features/finance/pages/FinanceDashboard").then(m => ({ default: m.FinanceDashboard })));
+const BudgetPlanningPage = lazy(() => import("../../features/finance/pages/BudgetPlanningPage").then(m => ({ default: m.BudgetPlanningPage })));
 
 
+
+const ExpensesPage = lazy(() => import("../../features/finance/pages/ExpensesPage").then(m => ({ default: m.ExpensesPage })));
+const SavingGoalsPage = lazy(() => import("../../features/finance/pages/SavingGoalsPage").then(m => ({ default: m.SavingGoalsPage })));
+const FinancialReportsPage = lazy(() => import("../../features/finance/pages/FinancialReportsPage").then(m => ({ default: m.FinancialReportsPage })));
+const FinancialProfilePage = lazy(() => import("../../features/finance/pages/FinancialProfilePage").then(m => ({ default: m.FinancialProfilePage })));
+const NutritionPlannerPage = lazy(() => import("../../features/nutrition/pages/NutritionPlannerPage").then(m => ({ default: m.NutritionPlannerPage })));
+
+const DocCategoryPage = lazy(() => import("../../features/documentation/pages/DocCategoryPage").then(m => ({ default: m.DocCategoryPage })));
+const DocArticleListPage = lazy(() => import("../../features/documentation/pages/DocArticleListPage").then(m => ({ default: m.DocArticleListPage })));
+const DocArticleFormPage = lazy(() => import("../../features/documentation/pages/DocArticleFormPage").then(m => ({ default: m.DocArticleFormPage })));
+
+const MuscleGroupPage = lazy(() => import("../../features/workout/pages/MuscleGroupPage").then(m => ({ default: m.MuscleGroupPage })));
+const ExercisePage = lazy(() => import("../../features/workout/pages/ExercisePage").then(m => ({ default: m.ExercisePage })));
+const WorkoutLogPage = lazy(() => import("../../features/workout/pages/WorkoutLogPage").then(m => ({ default: m.WorkoutLogPage })));
 
 export const AdminRoutes = [
     { index: true, element: <Navigate to="/admin/dashboard" replace /> },
@@ -117,6 +138,20 @@ export const AdminRoutes = [
     { path: "blog-category/edit/:id", element: <PermissionGuard permission="blog_category_edit"><BlogCategoryEditPage /></PermissionGuard> },
     { path: "blog-category/detail/:id", element: <PermissionGuard permission="blog_category_view"><BlogCategoryEditPage /></PermissionGuard> },
 
+    // Module-based Routes (English / Programming)
+    { path: ":module/blog/list", element: <PermissionGuard permission="blog_view"><BlogListPage /></PermissionGuard> },
+    { path: ":module/blog/create", element: <PermissionGuard permission="blog_create"><BlogCreatePage /></PermissionGuard> },
+    { path: ":module/blog/edit/:id", element: <PermissionGuard permission="blog_edit"><BlogEditPage /></PermissionGuard> },
+    { path: ":module/blog/detail/:id", element: <PermissionGuard permission="blog_view"><BlogDetailPage /></PermissionGuard> },
+    { path: ":module/blog-category/list", element: <PermissionGuard permission="blog_category_view"><BlogCategoryListPage /></PermissionGuard> },
+    { path: ":module/blog-category/create", element: <PermissionGuard permission="blog_category_create"><BlogCategoryCreatePage /></PermissionGuard> },
+    { path: ":module/blog-category/edit/:id", element: <PermissionGuard permission="blog_category_edit"><BlogCategoryEditPage /></PermissionGuard> },
+    { path: ":module/blog-category/detail/:id", element: <PermissionGuard permission="blog_category_view"><BlogCategoryEditPage /></PermissionGuard> },
+    { path: ":module/mind-maps", element: <MindMapListPage /> },
+    { path: ":module/mind-maps/create", element: <MindMapEditorPage /> },
+    { path: ":module/mind-maps/edit/:id", element: <MindMapEditorPage /> },
+    { path: ":module/mind-maps/categories", element: <MindMapCategoryPage /> },
+
 
     { path: "role/list", element: <PermissionGuard permission="role_view"><RoleListPage /></PermissionGuard> },
     { path: "role/create", element: <PermissionGuard permission="role_create"><RoleCreatePage /></PermissionGuard> },
@@ -139,8 +174,12 @@ export const AdminRoutes = [
     { path: "dashboard/settings/*", element: <PermissionGuard permission="settings_view"><SettingsPage /></PermissionGuard> },
     { path: "settings/breed/list", element: <PermissionGuard permission="breed_view"><BreedListPage /></PermissionGuard> },
     { path: "vocabulary/list", element: <VocabularyListPage /> },
+    { path: "vocabulary/phrasal-verb", element: <PhrasalVerbListPage /> },
     { path: "vocabulary/study", element: <VocabularyStudyPage /> },
+    { path: "vocabulary/mindmap", element: <PhrasalVerbMindmapPage /> },
     { path: "vocabulary/topic", element: <VocabularyTopicListPage /> },
+    { path: "vocabulary/statistics", element: <VocabularyStatisticsPage /> },
+    { path: "vocabulary/writing-skills", element: <WritingSkillsPage /> },
     { path: "productivity", element: <ProductivityPage /> },
     { path: "productivity/create", element: <ProductivityCreatePage /> },
     { path: "productivity/edit", element: <ProductivityEditPage /> },
@@ -148,7 +187,7 @@ export const AdminRoutes = [
     { path: "mind-maps/create", element: <MindMapEditorPage /> },
     { path: "mind-maps/edit/:id", element: <MindMapEditorPage /> },
     { path: "mind-maps/categories", element: <MindMapCategoryPage /> },
-    
+
     { path: "books", element: <BookListPage /> },
     { path: "books/create", element: <BookFormPage /> },
     { path: "books/edit/:id", element: <BookFormPage /> },
@@ -159,9 +198,24 @@ export const AdminRoutes = [
     { path: "notes", element: <NoteListPage /> },
     { path: "notes/create", element: <NoteEditorPage /> },
     { path: "notes/edit/:id", element: <NoteEditorPage /> },
+    { path: "lifestyle", element: <LifestylePage /> },
+    { path: "finance", element: <FinanceDashboard /> },
+    { path: "finance/profile", element: <FinancialProfilePage /> },
+    { path: "finance/budget", element: <BudgetPlanningPage /> },
+    { path: "finance/expenses", element: <ExpensesPage /> },
+    { path: "finance/savings", element: <SavingGoalsPage /> },
+    { path: "finance/reports", element: <FinancialReportsPage /> },
+    { path: "nutrition", element: <NutritionPlannerPage /> },
+    { path: "workout/exercises", element: <ExercisePage /> },
+    { path: "workout/muscle-groups", element: <MuscleGroupPage /> },
+    { path: "workout/logs", element: <WorkoutLogPage /> },
+
+    { path: "docs/category/list", element: <DocCategoryPage /> },
+    { path: "docs/article/list", element: <DocArticleListPage /> },
+    { path: "docs/article/create", element: <DocArticleFormPage /> },
+    { path: "docs/article/edit/:id", element: <DocArticleFormPage /> },
 ];
 
 export const AdminAuthRoutes = [
     { path: "auth/login", element: <LoginPage /> },
 ];
-

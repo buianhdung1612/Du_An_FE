@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { 
-    Box, Stack, TextField, Button, CircularProgress, 
+import {
+    Box, Stack, TextField, Button, CircularProgress,
     Card, InputAdornment
 } from "@mui/material";
 import { Icon } from "@iconify/react";
@@ -98,22 +98,47 @@ export const NoteEditorPage = () => {
                 </div>
                 <Button
                     onClick={() => navigate(`/${prefixAdmin}/notes`)}
+                    sx={{
+                        background: 'white',
+                        color: 'var(--palette-text-primary)',
+                        border: '1px solid var(--palette-text-primary)',
+                        minHeight: "2.25rem",
+                        minWidth: "4rem",
+                        fontWeight: 700,
+                        fontSize: "0.875rem",
+                        padding: "6px 12px",
+                        borderRadius: "var(--shape-borderRadius)",
+                        textTransform: "none",
+                        boxShadow: "none",
+                        mr: 2,
+                        "&:hover": {
+                            background: "var(--palette-grey-100)",
+                        }
+                    }}
                     variant="outlined"
-                    sx={{ borderRadius: "12px", mr: 2 }}
                 >
                     Hủy bỏ
                 </Button>
                 <Button
                     onClick={handleSave}
-                    variant="contained"
-                    disabled={submitting}
                     sx={{
                         background: 'var(--palette-text-primary)',
+                        minHeight: "2.25rem",
+                        minWidth: "4rem",
                         fontWeight: 700,
-                        borderRadius: "12px",
-                        px: 4,
-                        "&:hover": { background: "var(--palette-grey-700)" }
+                        fontSize: "0.875rem",
+                        padding: "6px 12px",
+                        borderRadius: "var(--shape-borderRadius)",
+                        textTransform: "none",
+                        boxShadow: "none",
+                        "&:hover": {
+                            background: "var(--palette-grey-700)",
+                            boxShadow: "var(--customShadows-z8)"
+                        }
                     }}
+                    variant="contained"
+                    disabled={submitting}
+                    startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <Icon icon="solar:diskette-bold" width={20} />}
                 >
                     {submitting ? "Đang lưu..." : "Lưu ghi chú"}
                 </Button>
@@ -138,7 +163,7 @@ export const NoteEditorPage = () => {
                             value={form.topic}
                             onChange={(e) => setForm({ ...form, topic: e.target.value })}
                             variant="outlined"
-                            InputProps={{ 
+                            InputProps={{
                                 sx: { borderRadius: '12px' },
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -151,9 +176,9 @@ export const NoteEditorPage = () => {
                 </Card>
 
                 <Box>
-                    <Tiptap 
-                        value={form.content} 
-                        onChange={(content) => setForm({ ...form, content })} 
+                    <Tiptap
+                        value={form.content}
+                        onChange={(content) => setForm({ ...form, content })}
                     />
                 </Box>
             </Stack>

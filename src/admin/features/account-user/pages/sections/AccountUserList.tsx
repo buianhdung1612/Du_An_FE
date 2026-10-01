@@ -28,6 +28,7 @@ import { STATUS_OPTIONS } from '../configs/constants';
 import { Search } from '@shared/components/ui/Search';
 import { ExportImport } from '@shared/components/ui/ExportImport';
 import { confirmDelete } from "@shared/utils/swal";
+import { getTabBadgeStyles } from "@shared/utils/badge";
 
 const TabBadge = styled('span')(() => ({
     height: "24px",
@@ -127,14 +128,7 @@ export const AccountUserList = ({ createdBy, assignedStaffId }: { createdBy?: st
                         label={option.label}
                         icon={
                             <TabBadge
-                                sx={{
-                                    bgcolor: status === option.value
-                                        ? (option.value === 'active' ? 'var(--palette-success-main)' : (option.value === 'inactive' ? 'var(--palette-error-main)' : 'var(--palette-grey-800)'))
-                                        : (option.value === 'active' ? 'var(--palette-success-lighter)' : (option.value === 'inactive' ? 'var(--palette-error-lighter)' : 'var(--palette-background-neutral)')),
-                                    color: status === option.value
-                                        ? 'var(--palette-common-white)'
-                                        : (option.value === 'all' ? 'var(--palette-text-secondary)' : (option.value === 'active' ? 'var(--palette-success-dark)' : 'var(--palette-error-dark)')),
-                                }}
+                                sx={getTabBadgeStyles(option.value, status === option.value)}
                             >
                                 {option.value === 'all' ? (pagination.totalRecords || 0) : counts[option.value as keyof typeof counts]}
                             </TabBadge>

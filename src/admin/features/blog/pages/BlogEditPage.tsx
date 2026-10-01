@@ -1,4 +1,4 @@
-import { Box, Stack, TextField, ThemeProvider, useTheme, CircularProgress, FormControl, InputLabel, Select, MenuItem, FormHelperText } from "@mui/material";
+import { Box, Stack, TextField, ThemeProvider, useTheme, CircularProgress, FormControl, InputLabel, Select, MenuItem, FormHelperText, Button } from "@mui/material";
 import { LoadingButton } from "../../../shared/components/ui/LoadingButton";
 import { Breadcrumb } from "../../../shared/components/ui/Breadcrumb";
 import { Title } from "../../../shared/components/ui/Title";
@@ -10,18 +10,29 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { createBlogSchema, CreateBlogFormValues } from "../../../shared/schemas/blog.schema";
 import { prefixAdmin } from "../../../shared/constants/routes";
-import { FormUploadSingleFile } from "../../../shared/components/upload/FormUploadSingleFile";
+import { UploadFiles } from "../../../shared/components/ui/UploadFiles";
+import { MarkdownEditor } from "../../../shared/components/ui/MarkdownEditor";
 import { toast } from "react-toastify";
-import { generateSlug } from "../api/blog.api";
+import { generateSlug, generateKeyPoints } from "../api/blog.api";
 import { useParams } from "react-router-dom";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import LightbulbIcon from "@mui/icons-material/Lightbulb";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import { Typography, IconButton } from "@mui/material";
 import { useNestedBlogCategories } from "../../blog-category/pages/hooks/useBlogCategory";
 import { getBlogCategoryTheme } from "../../blog-category/pages/configs/theme";
 import { CategoryTreeSelect } from "../../../shared/components/ui/CategoryTreeSelect";
 
 export const BlogEditPage = () => {
-    const { id } = useParams();
+    const { id, module } = useParams();
+    const activeModule = module || "programming";
+
     const [expandedDetail, setExpandedDetail] = useState(true);
     const [expandedExtra, setExpandedExtra] = useState(true);
+    const [isMarkdownMode, setIsMarkdownMode] = useState(false);
+    const [files, setFiles] = useState<any[]>([]);
+    const [resetKey, setResetKey] = useState(0);
 
     const toggle = (setter: Dispatch<SetStateAction<boolean>>) =>
         () => setter(prev => !prev);
@@ -30,29 +41,34 @@ export const BlogEditPage = () => {
     const localTheme = getBlogCategoryTheme(outerTheme);
 
     const { data: detailRes, isLoading: isLoadingDetail } = useBlogDetail(id);
-    const { data: blogCategories = [] } = useNestedBlogCategories();
+    const { data: blogCategories = [] } = useNestedBlogCategories({ module: activeModule });
     const { mutate: update, isPending: isUpdating } = useUpdateBlog();
+
+    const [newKeyPoint, setNewKeyPoint] = useState("");
+    const [isGeneratingPoints, setIsGeneratingPoints] = useState(false);
 
     const {
         control,
         handleSubmit,
         reset,
+        setValue,
+        watch,
     } = useForm<CreateBlogFormValues>({
         resolver: zodResolver(createBlogSchema) as any,
         defaultValues: {
             name: "",
             description: "",
             content: "",
-            avatar: "",
+            images: [],
             category: [],
             status: "draft",
+            keyPoints: [],
         },
     });
 
     useEffect(() => {
         if (detailRes) {
-            // detailRes is the mapped object from useBlogDetail
-            const detail = detailRes;
+            const detail = detailRes as any;
             const categoryValue = Array.isArray(detail.category)
                 ? detail.category.map((cat: any) => typeof cat === 'object' ? cat._id : cat)
                 : [];
@@ -61,18 +77,71 @@ export const BlogEditPage = () => {
                 name: detail.name || "",
                 description: detail.description || "",
                 content: detail.content || "",
-                avatar: detail.avatar || "",
+                images: detail.images || (detail.avatar ? [detail.avatar] : []),
                 category: categoryValue,
                 status: detail.status || "draft",
+                keyPoints: detail.keyPoints || [],
             });
+            setFiles(detail.images || (detail.avatar ? [{ preview: detail.avatar, name: detail.avatar }] : []));
+            setResetKey(prev => prev + 1);
         }
     }, [detailRes, reset]);
+
+    const keyPoints = watch("keyPoints") || [];
+
+    const handleAddKeyPoint = () => {
+        if (!newKeyPoint.trim()) return;
+        if (keyPoints.length >= 5) {
+            toast.warning("Chỉ nên có tối đa 5 ý chính để tóm tắt tốt nhất!");
+            return;
+        }
+        setValue("keyPoints", [...keyPoints, newKeyPoint.trim()]);
+        setNewKeyPoint("");
+    };
+
+    const handleRemoveKeyPoint = (index: number) => {
+        setValue("keyPoints", keyPoints.filter((_: any, i: number) => i !== index));
+    };
+
+    const handleAIGenerateKeyPoints = async () => {
+        const currentContent = watch("content");
+        const currentDescription = watch("description");
+        if (!currentContent && !currentDescription) {
+            toast.warning("Vui lòng nhập mô tả hoặc nội dung bài viết trước để AI phân tích!");
+            return;
+        }
+
+        try {
+            setIsGeneratingPoints(true);
+            const res = await generateKeyPoints({
+                content: currentContent,
+                description: currentDescription
+            });
+            if (res.success && res.keyPoints) {
+                setValue("keyPoints", res.keyPoints);
+                toast.success("AI đã tóm tắt xong các ý chính!");
+            } else {
+                toast.error(res.message || "Không thể trích xuất ý chính bằng AI");
+            }
+        } catch (err) {
+            toast.error("Có lỗi xảy ra khi kết nối với AI");
+        } finally {
+            setIsGeneratingPoints(false);
+        }
+    };
+
+    useEffect(() => {
+        setValue("images", files);
+    }, [files, setValue]);
 
     const onSubmit = (data: CreateBlogFormValues) => {
         const payload = {
             ...data,
             slug: generateSlug(data.name),
-            category: JSON.stringify(data.category)
+            category: JSON.stringify(data.category),
+            images: JSON.stringify(data.images.map((f: any) => f.name || f)),
+            keyPoints: JSON.stringify(data.keyPoints || []),
+            module: activeModule
         };
 
         update({ id: id!, data: payload }, {
@@ -89,6 +158,11 @@ export const BlogEditPage = () => {
         });
     };
 
+    const onError = (errors: any) => {
+        console.error("Form validation errors:", errors);
+        toast.error("Vui lòng kiểm tra lại các trường bắt buộc");
+    };
+
     if (isLoadingDetail) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -97,15 +171,18 @@ export const BlogEditPage = () => {
         );
     }
 
+    const displayTitle = activeModule === "english" ? "Chỉnh sửa bài viết Anh Văn" : "Chỉnh sửa bài viết Lập Trình";
+    const listTitle = activeModule === "english" ? "Bài viết Anh Văn" : "Bài viết Lập Trình";
+
     return (
         <>
             <div className="mb-[calc(5*var(--spacing))] gap-[calc(2*var(--spacing))] flex flex-col md:flex-row md:items-start md:justify-end">
                 <div className="mr-auto">
-                    <Title title="Chỉnh sửa bài viết" />
+                    <Title title={displayTitle} />
                     <Breadcrumb
                         items={[
                             { label: "Dashboard", to: "/" },
-                            { label: "Bài viết", to: `/${prefixAdmin}/blog/list` },
+                            { label: listTitle, to: `/${prefixAdmin}/${activeModule}/blog/list` },
                             { label: "Chỉnh sửa" }
                         ]}
                     />
@@ -113,7 +190,7 @@ export const BlogEditPage = () => {
             </div>
 
             <ThemeProvider theme={localTheme}>
-                <form onSubmit={handleSubmit(onSubmit)}>
+                <form onSubmit={handleSubmit(onSubmit, onError)}>
                     <Stack sx={{ margin: { xs: "0px", md: "0px calc(15 * var(--spacing))" }, gap: "calc(5 * var(--spacing))" }}>
                         <CollapsibleCard
                             title="Chi tiết"
@@ -135,7 +212,7 @@ export const BlogEditPage = () => {
                                         />
                                     )}
                                 />
-                                <Controller
+                                 <Controller
                                     name="description"
                                     control={control}
                                     render={({ field, fieldState }) => (
@@ -155,22 +232,137 @@ export const BlogEditPage = () => {
                                         />
                                     )}
                                 />
+
+                                <Box sx={{ mt: 1, mb: 1, p: 2, borderRadius: '12px', border: '1px dashed var(--palette-divider)', bgcolor: 'rgba(145, 158, 171, 0.04)' }}>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                            <LightbulbIcon color="warning" />
+                                            <div className="text-[0.875rem] font-semibold text-[var(--palette-text-primary)]">
+                                                Ý chính cốt lõi (Tóm tắt nhanh)
+                                            </div>
+                                        </Stack>
+                                        <LoadingButton
+                                            size="small"
+                                            variant="outlined"
+                                            color="inherit"
+                                            loading={isGeneratingPoints}
+                                            startIcon={<AutoAwesomeIcon sx={{ width: 16, height: 16 }} />}
+                                            onClick={handleAIGenerateKeyPoints}
+                                            sx={{ borderRadius: '8px', textTransform: 'none', color: 'var(--palette-text-primary)', borderColor: 'var(--palette-divider)' }}
+                                        >
+                                            AI Tóm tắt ý chính
+                                        </LoadingButton>
+                                    </Stack>
+
+                                    <Stack spacing={1} sx={{ mb: 2 }}>
+                                        {keyPoints.length === 0 ? (
+                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', px: 1 }}>
+                                                Chưa có ý chính nào. Bấm nút AI Tóm tắt hoặc tự nhập thêm bên dưới.
+                                            </Typography>
+                                        ) : (
+                                            keyPoints.map((point: string, index: number) => (
+                                                <Stack 
+                                                    key={index} 
+                                                    direction="row" 
+                                                    alignItems="center" 
+                                                    justifyContent="space-between" 
+                                                    sx={{ 
+                                                        p: 1, 
+                                                        px: 2, 
+                                                        borderRadius: '8px', 
+                                                        bgcolor: 'var(--palette-background-paper)',
+                                                        border: '1px solid var(--palette-divider)' 
+                                                    }}
+                                                >
+                                                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                        <Box sx={{ 
+                                                            width: 20, 
+                                                            height: 20, 
+                                                            borderRadius: '50%', 
+                                                            bgcolor: 'rgba(0, 167, 111, 0.08)', 
+                                                            color: 'var(--palette-success-main)', 
+                                                            display: 'flex', 
+                                                            alignItems: 'center', 
+                                                            justifyContent: 'center',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 700 
+                                                        }}>
+                                                            {index + 1}
+                                                        </Box>
+                                                        <Typography variant="body2" color="text.primary">
+                                                            {point}
+                                                        </Typography>
+                                                    </Stack>
+                                                    <IconButton size="small" onClick={() => handleRemoveKeyPoint(index)} color="error">
+                                                        <DeleteIcon sx={{ width: 18, height: 18 }} />
+                                                    </IconButton>
+                                                </Stack>
+                                            ))
+                                        )}
+                                    </Stack>
+
+                                    <Stack direction="row" spacing={1}>
+                                        <TextField
+                                            size="small"
+                                            fullWidth
+                                            placeholder="Nhập ý chính tiếp theo..."
+                                            value={newKeyPoint}
+                                            onChange={(e) => setNewKeyPoint(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddKeyPoint();
+                                                }
+                                            }}
+                                        />
+                                        <Button 
+                                            variant="contained" 
+                                            color="inherit"
+                                            onClick={handleAddKeyPoint}
+                                            sx={{ 
+                                                minWidth: '80px', 
+                                                textTransform: 'none',
+                                                bgcolor: 'var(--palette-text-primary)',
+                                                color: 'var(--palette-common-white)',
+                                                '&:hover': {
+                                                    bgcolor: 'var(--palette-grey-800)'
+                                                }
+                                            }}
+                                            startIcon={<AddIcon />}
+                                        >
+                                            Thêm
+                                        </Button>
+                                    </Stack>
+                                </Box>
                                 <Controller
                                     name="content"
                                     control={control}
                                     render={({ field, fieldState }) => (
                                         <Box>
-                                            <Tiptap
-                                                value={field.value ?? ""}
-                                                onChange={field.onChange}
-                                            />
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                                <div className="text-[0.875rem] font-semibold text-[var(--palette-text-primary)]">Nội dung bài viết</div>
+                                                <Button 
+                                                    size="small" 
+                                                    variant="outlined" 
+                                                    onClick={() => setIsMarkdownMode(!isMarkdownMode)}
+                                                    sx={{ borderRadius: '8px', textTransform: 'none', color: 'var(--palette-text-primary)', borderColor: 'var(--palette-divider)' }}
+                                                >
+                                                    {isMarkdownMode ? "Chuyển sang soạn thảo Rich Text" : "Chuyển sang soạn thảo Markdown"}
+                                                </Button>
+                                            </Box>
+                                            {isMarkdownMode ? (
+                                                <MarkdownEditor value={field.value ?? ""} onChange={field.onChange} />
+                                            ) : (
+                                                <Tiptap value={field.value ?? ""} onChange={field.onChange} />
+                                            )}
                                             {fieldState.error && <FormHelperText error>{fieldState.error.message}</FormHelperText>}
                                         </Box>
                                     )}
                                 />
-                                <FormUploadSingleFile
-                                    name="avatar"
-                                    control={control}
+                                <UploadFiles
+                                    key={resetKey}
+                                    files={files}
+                                    onFilesChange={(newFiles) => setFiles(newFiles)}
                                 />
                             </Stack>
                         </CollapsibleCard>

@@ -102,7 +102,11 @@ export const VocabularyTopicListPage = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '16px' }}>
                     <Button
-                        onClick={() => handleOpenDialog()}
+                        onClick={() => {
+                            setSelectedVocab(null);
+                            setVocabDefaultTopicId(undefined);
+                            setVocabDialogOpen(true);
+                        }}
                         sx={{
                             background: 'var(--palette-text-primary)',
                             minHeight: "2.25rem",
@@ -119,6 +123,29 @@ export const VocabularyTopicListPage = () => {
                             }
                         }}
                         variant="contained"
+                        startIcon={<AddIcon />}
+                    >
+                        {"Thêm từ vựng"}
+                    </Button>
+                    <Button
+                        onClick={() => handleOpenDialog()}
+                        sx={{
+                            background: 'white',
+                            color: 'var(--palette-text-primary)',
+                            border: '1px solid var(--palette-text-primary)',
+                            minHeight: "2.25rem",
+                            minWidth: "4rem",
+                            fontWeight: 700,
+                            fontSize: "0.875rem",
+                            padding: "6px 12px",
+                            borderRadius: "var(--shape-borderRadius)",
+                            textTransform: "none",
+                            boxShadow: "none",
+                            "&:hover": {
+                                background: "var(--palette-grey-100)",
+                            }
+                        }}
+                        variant="outlined"
                         startIcon={<AddIcon />}
                     >
                         {"Tạo chủ đề"}

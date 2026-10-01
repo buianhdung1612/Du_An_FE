@@ -12,7 +12,7 @@ import { prefixAdmin } from "../../../../shared/constants/routes";
 import dayjs from "dayjs";
 import 'dayjs/locale/vi';
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { confirmDelete } from "@shared/utils/swal";
@@ -29,6 +29,9 @@ interface BlogListProps {
 }
 
 export const BlogList = ({ blogs = [], isLoading = false, page, onPageChange, pagination, isTrash }: BlogListProps) => {
+
+    const { module } = useParams();
+    const activeModule = module || "programming";
 
     const handleChangePage = (_event: React.ChangeEvent<unknown>, value: number) => {
         onPageChange(value);
@@ -56,7 +59,7 @@ export const BlogList = ({ blogs = [], isLoading = false, page, onPageChange, pa
 
     const handleEdit = () => {
         if (selectedBlogId) {
-            navigate(`/${prefixAdmin}/blog/edit/${selectedBlogId}`);
+            navigate(`/${prefixAdmin}/${activeModule}/blog/edit/${selectedBlogId}`);
             handleCloseMenu();
         }
     };
@@ -178,7 +181,7 @@ export const BlogList = ({ blogs = [], isLoading = false, page, onPageChange, pa
                                 <Stack sx={{ flex: 1, gap: "8px" }}>
                                     <Link
                                         className="text-[1rem] font-[600] leading-[1.5] line-clamp-2 hover:underline"
-                                        to={`/${prefixAdmin}/blog/detail/${blog.id}`}
+                                        to={`/${prefixAdmin}/${activeModule}/blog/detail/${blog.id}`}
                                     >
                                         {blog.title}
                                     </Link>
@@ -280,7 +283,7 @@ export const BlogList = ({ blogs = [], isLoading = false, page, onPageChange, pa
                 {!isTrash ? (
                     <>
                         <MenuItem onClick={() => {
-                            navigate(`/${prefixAdmin}/blog/detail/${selectedBlogId}`);
+                            navigate(`/${prefixAdmin}/${activeModule}/blog/detail/${selectedBlogId}`);
                             handleCloseMenu();
                         }} sx={{ borderRadius: "var(--shape-borderRadius-sm)", py: 1 }}>
                             <ListItemIcon sx={{ minWidth: '24px !important', mr: 1 }}>

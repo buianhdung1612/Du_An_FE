@@ -3,7 +3,7 @@ import {
     Card, Table, TableBody, TableCell, TableContainer,
     TableHead, TableRow, IconButton, Typography, CircularProgress,
     Stack, Collapse, Menu, MenuItem, Divider, TablePagination,
-    ListItemIcon, useMediaQuery, useTheme, Box
+    ListItemIcon, useMediaQuery, useTheme, Box, Tooltip
 } from '@mui/material';
 import { Icon } from '@iconify/react';
 import dayjs from "dayjs";
@@ -25,19 +25,7 @@ interface VocabularyTopicListProps {
     onEditVocab: (vocab: any) => void;
 }
 
-const MENU_STYLE = {
-    backgroundImage: `url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSJ1cmwoI3BhaW50MF9yYWRpYWxfNDQ2NF81NTMzOCkiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CjxkZWZzPgo8cmFkaWFsR3JhZGllbnQgaWQ9InBhaW50MF9yYWRpYWxfNDQ2NF81NTMzOCIgY3g9IjAiIGN5PSIwIiByPSIxIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgZ3JhZGllbnRUcmFuc2Zvcm09InRyYW5zbGF0ZSgxMjAgMS44MTgxMmUtMDUpIHJvdGF0ZSgtNDUpIHNjYWxlKDEyMy4yNSkiPgo8c3RvcCBzdG9wLWNvbG9yPSIjMDBCOEQ5Ii8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzAwQjhEOSIgc3RvcC1vcGFjaXR5PSIwIi8+CjwvcmFkaWFsR3JhZGllbnQ+CjwvZWZzPgo8L3N2Zz4K), url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiBmaWxsPSJ1cmwoI3BhaW50MF9yYWRpYWxfNDQ2NF81NTMzNykiIGZpbGwtb3BhY2l0eT0iMC4xIi8+CjxkZWZzPgo8cmFkaWFsR3JhZGllbnQgaWQ9InBhaW50MF9yYWRpYWxfNDQ2NF81NTMzNyIgY3g9IjAiIGN5PSIwIiByPSIxIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgZ3JhZGllbnRUcmFuc2Zvcm09InRyYW5zbGF0ZSgwIDEyMCkgcm90YXRlKDEzNSkgc2NhbGUoMTIzLjI1KSI+CjxzdG9wIHN0b3AtY29sb3I9IiNGRjU2MzAiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjRkY1NjMwIiBzdG9wLW9wYWNpdHk9IjAiLz4KPC9yYWRpYWxHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K)`,
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    backgroundColor: '#ffffffe6',
-    backgroundRepeat: 'no-repeat',
-    backgroundSize: '50%, 50%',
-    backgroundPosition: 'right top, left bottom',
-    boxShadow: '0 0 2px 0 rgba(145, 158, 171, 0.24), -20px 20px 40px -4px rgba(145, 158, 171, 0.24)',
-    borderRadius: '10px',
-    width: 160,
-    p: 0.5,
-};
+
 
 export const VocabularyTopicList = ({ onEdit, onAddVocab, onEditVocab }: VocabularyTopicListProps) => {
     const theme = useTheme();
@@ -139,8 +127,14 @@ export const VocabularyTopicList = ({ onEdit, onAddVocab, onEditVocab }: Vocabul
                                                     </TableCell>
 
                                                     <TableCell align="right">
-                                                        <Stack direction="row" spacing={0} justifyContent="flex-end" alignItems="center">
-                                                            <IconButton size="small" onClick={() => toggleRow(row._id)} sx={{ mr: 0.5 }}>
+                                                        <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
+                                                            <Tooltip title="Thêm từ vựng">
+                                                                <IconButton size="small" color="primary" onClick={() => onAddVocab(row)}>
+                                                                    <Icon icon="solar:add-circle-bold" width={22} />
+                                                                </IconButton>
+                                                            </Tooltip>
+
+                                                            <IconButton size="small" onClick={() => toggleRow(row._id)}>
                                                                 <Icon icon={isOpen ? 'eva:arrow-ios-upward-fill' : 'eva:arrow-ios-downward-fill'} width={20} />
                                                             </IconButton>
 
@@ -161,15 +155,6 @@ export const VocabularyTopicList = ({ onEdit, onAddVocab, onEditVocab }: Vocabul
                                                                 }
                                                             }}
                                                         >
-                                                            <MenuItem
-                                                                onClick={() => { handleCloseMenu(row._id); onAddVocab(row); }}
-                                                                sx={{ borderRadius: '8px', mb: 0.5 }}
-                                                            >
-                                                                <ListItemIcon sx={{ minWidth: '32px !important' }}>
-                                                                    <Icon icon="solar:add-circle-bold" width={20} />
-                                                                </ListItemIcon>
-                                                                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8125rem' }}>Thêm từ vựng</Typography>
-                                                            </MenuItem>
                                                             <MenuItem
                                                                 onClick={() => { handleCloseMenu(row._id); navigate(`/${prefixAdmin}/vocabulary/study?topicId=${row._id}`); }}
                                                                 sx={{ borderRadius: '8px', mb: 0.5 }}
@@ -243,7 +228,10 @@ export const VocabularyTopicList = ({ onEdit, onAddVocab, onEditVocab }: Vocabul
                                             <Typography variant="subtitle1" fontWeight={700} color="primary.main">
                                                 {row.title}
                                             </Typography>
-                                            <Stack direction="row">
+                                            <Stack direction="row" spacing={0.5}>
+                                                <IconButton size="small" color="primary" onClick={() => onAddVocab(row)}>
+                                                    <Icon icon="solar:add-circle-bold" width={22} />
+                                                </IconButton>
                                                 <IconButton size="small" onClick={() => toggleRow(row._id)}>
                                                     <Icon icon={isOpen ? 'eva:arrow-ios-upward-fill' : 'eva:arrow-ios-downward-fill'} width={20} />
                                                 </IconButton>
@@ -271,10 +259,7 @@ export const VocabularyTopicList = ({ onEdit, onAddVocab, onEditVocab }: Vocabul
                                             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                             slotProps={{ paper: { sx: { ...PREMIUM_MENU_STYLE, width: 160 } } }}
                                         >
-                                            <MenuItem onClick={() => { handleCloseMenu(row._id); onAddVocab(row); }} sx={{ borderRadius: '8px' }}>
-                                                <ListItemIcon sx={{ minWidth: '32px !important' }}><Icon icon="solar:add-circle-bold" width={20} /></ListItemIcon>
-                                                <Typography variant="body2" fontWeight={600}>Thêm từ</Typography>
-                                            </MenuItem>
+
                                             <MenuItem onClick={() => { handleCloseMenu(row._id); navigate(`/${prefixAdmin}/vocabulary/study?topicId=${row._id}`); }} sx={{ borderRadius: '8px' }}>
                                                 <ListItemIcon sx={{ minWidth: '32px !important' }}><Icon icon="solar:play-circle-bold" width={20} color="#00A76F" /></ListItemIcon>
                                                 <Typography variant="body2" fontWeight={600} color="#00A76F">Học ngay</Typography>

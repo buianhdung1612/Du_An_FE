@@ -10,11 +10,13 @@ export const createBlogSchema = z.object({
 
     content: z.string().min(1, "Nội dung bài viết không được để trống"),
 
-    avatar: z.string().optional(),
+    images: z.any().default([]),
 
     category: z.array(z.string()).min(1, "Vui lòng chọn ít nhất một danh mục bài viết"),
 
     status: z.enum(["draft", "published", "archived"]).default("draft"),
+
+    keyPoints: z.array(z.string()).default([]),
 });
 
 export type CreateBlogFormValues = z.infer<typeof createBlogSchema>;

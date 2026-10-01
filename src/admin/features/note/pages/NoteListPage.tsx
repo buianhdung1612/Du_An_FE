@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { 
-    Box, Stack, Typography, Grid, Card, IconButton, 
-    Button, TextField, InputAdornment, Chip, CircularProgress,
-    Tooltip
+import {
+    Box, Stack, Typography, Grid, Card, IconButton,
+    Button, TextField, InputAdornment, Chip, CircularProgress
 } from "@mui/material";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
@@ -68,16 +67,23 @@ export const NoteListPage = () => {
                 </div>
                 <Button
                     onClick={() => navigate(`/${prefixAdmin}/notes/create`)}
-                    variant="contained"
-                    startIcon={<Icon icon="solar:add-circle-bold" />}
                     sx={{
                         background: 'var(--palette-text-primary)',
+                        minHeight: "2.25rem",
+                        minWidth: "4rem",
                         fontWeight: 700,
-                        borderRadius: "12px",
+                        fontSize: "0.875rem",
+                        padding: "6px 12px",
+                        borderRadius: "var(--shape-borderRadius)",
                         textTransform: "none",
-                        px: 3,
-                        "&:hover": { background: "var(--palette-grey-700)" }
+                        boxShadow: "none",
+                        "&:hover": {
+                            background: "var(--palette-grey-700)",
+                            boxShadow: "var(--customShadows-z8)"
+                        }
                     }}
+                    variant="contained"
+                    startIcon={<Icon icon="solar:add-circle-bold" width={20} />}
                 >
                     Tạo ghi chú mới
                 </Button>
@@ -112,12 +118,12 @@ export const NoteListPage = () => {
             ) : (
                 <Grid container spacing={3}>
                     {notes.map((note) => (
-                        <Grid item xs={12} sm={6} md={4} key={note._id}>
-                            <Card sx={{ 
-                                p: 3, 
-                                borderRadius: '20px', 
-                                height: '100%', 
-                                display: 'flex', 
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={note._id}>
+                            <Card sx={{
+                                p: 3,
+                                borderRadius: '20px',
+                                height: '100%',
+                                display: 'flex',
                                 flexDirection: 'column',
                                 transition: 'transform 0.2s, box-shadow 0.2s',
                                 '&:hover': {
@@ -126,12 +132,11 @@ export const NoteListPage = () => {
                                 }
                             }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
-                                    <Chip 
-                                        label={note.topic || "Chung"} 
-                                        size="small" 
-                                        color="primary" 
-                                        variant="soft"
-                                        sx={{ fontWeight: 700, borderRadius: '8px' }}
+                                    <Chip
+                                        label={note.topic || "Chung"}
+                                        size="small"
+                                        color="primary"
+                                        sx={{ fontWeight: 700, borderRadius: '8px', bgcolor: 'rgba(0, 167, 111, 0.16)', color: 'rgb(0, 120, 103)' }}
                                     />
                                     <Box>
                                         <IconButton size="small" onClick={() => navigate(`/${prefixAdmin}/notes/edit/${note._id}`)}>
@@ -147,11 +152,11 @@ export const NoteListPage = () => {
                                     {note.title}
                                 </Typography>
 
-                                <Typography 
-                                    variant="body2" 
-                                    color="text.secondary" 
-                                    sx={{ 
-                                        flexGrow: 1, 
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{
+                                        flexGrow: 1,
                                         display: '-webkit-box',
                                         WebkitLineClamp: 3,
                                         WebkitBoxOrient: 'vertical',

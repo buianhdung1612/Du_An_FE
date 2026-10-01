@@ -1,8 +1,7 @@
-import { Box, Paper, Typography, Stack, Checkbox, IconButton, Button, ButtonGroup, useTheme, LinearProgress, Divider, alpha } from "@mui/material";
+import { Box, Paper, Typography, Stack, Checkbox, IconButton, Button, ButtonGroup, useTheme, LinearProgress, Divider, alpha, Collapse } from "@mui/material";
 import { useProductivityStore } from "../stores/useProductivityStore";
 import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import dayjs from "dayjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateExecution, updateWeeklyPlanning } from "../api/productivity.api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,21 +12,17 @@ export const ExecutionPanel = () => {
     const { activePlan, currentWeekIndex, setActivePlan } = useProductivityStore();
     const [view, setView] = useState<'checklist' | 'calendar'>('checklist');
 
-    const todayIndex = dayjs().day() === 0 ? 6 : dayjs().day() - 1; // 0 (Mon) - 6 (Sun)
-    const [selectedDayIndex, setSelectedDayIndex] = useState(todayIndex);
-
     // Dữ liệu gốc từ Store
     const weekData = activePlan?.weeklyExecution?.find((w: any) => w.weekIndex === currentWeekIndex);
 
     // Local state để chỉnh sửa thoải mái trước khi lưu
     const [localGoals, setLocalGoals] = useState<any[]>([]);
-    const [localFocus, setLocalFocus] = useState<any>({});
+    const [expandedGoals, setExpandedGoals] = useState<Record<number, boolean>>({});
 
     // Đồng bộ local state khi weekData thay đổi (lần đầu load hoặc sau khi lưu)
     useEffect(() => {
         if (weekData) {
             setLocalGoals(weekData.weeklyGoals || []);
-            setLocalFocus(weekData.dailyFocus || {});
         }
     }, [weekData]);
 
@@ -46,7 +41,6 @@ export const ExecutionPanel = () => {
         onSuccess: (response: any) => {
             if (response.code === 200) {
                 setActivePlan(response.data);
-                // Sau khi lưu thành công thì cũng cập nhật lại local state
                 setLocalGoals(response.data.weeklyExecution?.find((w: any) => w.weekIndex === currentWeekIndex)?.weeklyGoals || []);
             }
             queryClient.invalidateQueries({ queryKey: ["active-plan"] });
@@ -54,18 +48,30 @@ export const ExecutionPanel = () => {
     });
 
     const handleApplyUpdate = () => {
+        const cleanGoals = localGoals
+            .filter(g => g.title?.trim())
+            .map(g => ({
+                ...g,
+                subGoals: (g.subGoals || []).filter((s: any) => s.title?.trim())
+            }));
+
         planningMutation.mutate({
             planId: activePlan._id,
             weekIndex: currentWeekIndex,
-            weeklyGoals: localGoals,
-            dailyFocus: localFocus
-        });
+            weeklyGoals: cleanGoals
+        } as any);
     };
 
     const handleToggleWeeklyGoal = (goalIdx: number) => {
         const goals = [...localGoals];
         if (goals[goalIdx]) {
-            goals[goalIdx] = { ...goals[goalIdx], isCompleted: !goals[goalIdx].isCompleted };
+            const newCompleted = !goals[goalIdx].isCompleted;
+            goals[goalIdx] = { ...goals[goalIdx], isCompleted: newCompleted };
+            
+            // Tùy chọn: tự động check/uncheck toàn bộ subgoals
+            if (goals[goalIdx].subGoals && goals[goalIdx].subGoals.length > 0) {
+                goals[goalIdx].subGoals = goals[goalIdx].subGoals.map((s: any) => ({ ...s, isCompleted: newCompleted }));
+            }
             setLocalGoals(goals);
         }
     };
@@ -95,7 +101,7 @@ export const ExecutionPanel = () => {
     };
 
     const handleAddWeeklyGoal = () => {
-        setLocalGoals([...localGoals, { title: "", isCompleted: false }]);
+        setLocalGoals([...localGoals, { title: "", isCompleted: false, subGoals: [] }]);
         focusLastEditable('.weekly-goal-input');
     };
 
@@ -103,32 +109,52 @@ export const ExecutionPanel = () => {
         setLocalGoals(localGoals.filter((_, i) => i !== idx));
     };
 
-    const handleToggleDailyTask = (idx: number) => {
-        const dayFocus = [...(localFocus[selectedDayIndex] || [])];
-        if (dayFocus[idx]) {
-            dayFocus[idx] = { ...dayFocus[idx], isCompleted: !dayFocus[idx].isCompleted };
-            setLocalFocus({ ...localFocus, [selectedDayIndex]: dayFocus });
-        }
+    const toggleExpand = (idx: number) => {
+        setExpandedGoals(prev => ({ ...prev, [idx]: !prev[idx] }));
     };
 
-    const handleUpdateDailyTaskText = (idx: number, title: string) => {
-        const dayFocus = [...(localFocus[selectedDayIndex] || [])];
-        if (dayFocus[idx]) {
-            dayFocus[idx] = { ...dayFocus[idx], title };
-            setLocalFocus({ ...localFocus, [selectedDayIndex]: dayFocus });
-        }
+    // --- SUB-GOALS HANDLERS ---
+    const handleAddSubGoal = (goalIdx: number) => {
+        const goals = [...localGoals];
+        const subGoals = [...(goals[goalIdx].subGoals || [])];
+        subGoals.push({ title: "", isCompleted: false });
+        
+        goals[goalIdx] = { ...goals[goalIdx], subGoals, isCompleted: false };
+        setLocalGoals(goals);
+        
+        setExpandedGoals(prev => ({ ...prev, [goalIdx]: true }));
+        focusLastEditable(`.subgoal-input-${goalIdx}`);
     };
 
-    const handleAddDailyTask = () => {
-        const dayFocus = [...(localFocus[selectedDayIndex] || []), { title: "", isCompleted: false }];
-        setLocalFocus({ ...localFocus, [selectedDayIndex]: dayFocus });
-        focusLastEditable('.daily-task-input');
+    const handleToggleSubGoal = (goalIdx: number, subIdx: number) => {
+        const goals = [...localGoals];
+        const subGoals = [...(goals[goalIdx].subGoals || [])];
+        subGoals[subIdx] = { ...subGoals[subIdx], isCompleted: !subGoals[subIdx].isCompleted };
+        
+        const allChecked = subGoals.length > 0 && subGoals.every(s => s.isCompleted);
+        goals[goalIdx] = { ...goals[goalIdx], subGoals, isCompleted: allChecked };
+        setLocalGoals(goals);
     };
 
-    const handleRemoveDailyTask = (idx: number) => {
-        const dayFocus = (localFocus[selectedDayIndex] || []).filter((_: any, i: number) => i !== idx);
-        setLocalFocus({ ...localFocus, [selectedDayIndex]: dayFocus });
+    const handleRemoveSubGoal = (goalIdx: number, subIdx: number) => {
+        const goals = [...localGoals];
+        const subGoals = [...(goals[goalIdx].subGoals || [])];
+        subGoals.splice(subIdx, 1);
+        
+        const allChecked = subGoals.length > 0 ? subGoals.every(s => s.isCompleted) : goals[goalIdx].isCompleted;
+        goals[goalIdx] = { ...goals[goalIdx], subGoals, isCompleted: allChecked };
+        setLocalGoals(goals);
     };
+
+    const handleUpdateSubGoalText = (goalIdx: number, subIdx: number, title: string) => {
+        const goals = [...localGoals];
+        const subGoals = [...(goals[goalIdx].subGoals || [])];
+        subGoals[subIdx] = { ...subGoals[subIdx], title };
+        goals[goalIdx] = { ...goals[goalIdx], subGoals };
+        setLocalGoals(goals);
+    };
+
+    // --- END SUB-GOALS HANDLERS ---
 
     const handleToggleCheck = (tacticId: string, isCompleted: boolean) => {
         mutation.mutate({
@@ -148,9 +174,8 @@ export const ExecutionPanel = () => {
         });
     };
 
-    // Get dates for the current week based on startDate
     const getWeekDates = (startIndex: number) => {
-        const dates = [];
+        const dates: Date[] = [];
         const start = new Date(activePlan.startDate);
         start.setDate(start.getDate() + (startIndex - 1) * 7);
         for (let i = 0; i < 7; i++) {
@@ -161,7 +186,6 @@ export const ExecutionPanel = () => {
         return dates;
     };
 
-    // Flatten tactics from all goals for the execution views
     const allTactics = (activePlan?.goals || []).reduce((acc: any[], goal: any) => {
         return [...acc, ...(goal.tactics || [])];
     }, []);
@@ -175,7 +199,7 @@ export const ExecutionPanel = () => {
             borderRadius: '16px',
             boxShadow: 'var(--customShadows-card)',
             bgcolor: 'background.paper',
-            minHeight: '600px', // Fixed height to prevent co gian
+            minHeight: '600px',
             display: 'flex',
             flexDirection: 'column'
         }}>
@@ -218,8 +242,8 @@ export const ExecutionPanel = () => {
                             <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, display: 'block' }}>
                                 🎯 Mục tiêu trọng tâm tuần {currentWeekIndex}
                             </Typography>
-                            <Button 
-                                size="small" 
+                            <Button
+                                size="small"
                                 startIcon={<Icon icon="solar:diskette-bold" />}
                                 onClick={handleApplyUpdate}
                                 disabled={planningMutation.isPending}
@@ -230,7 +254,11 @@ export const ExecutionPanel = () => {
                             </Button>
                         </Stack>
                         <Stack spacing={1} sx={{ minHeight: '50px' }}>
-                            {localGoals.map((goal: any, idx: number) => (
+                            {localGoals.map((goal: any, idx: number) => {
+                                const isExpanded = !!expandedGoals[idx];
+                                const hasSubGoals = goal.subGoals && goal.subGoals.length > 0;
+                                
+                                return (
                                 <Paper
                                     key={idx}
                                     elevation={0}
@@ -239,73 +267,132 @@ export const ExecutionPanel = () => {
                                         bgcolor: goal.isCompleted ? alpha(theme.palette.success.main, 0.05) : alpha(theme.palette.primary.main, 0.03),
                                         border: '1px solid',
                                         borderColor: goal.isCompleted ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.primary.main, 0.1),
-                                        display: 'flex', alignItems: 'center', gap: 1.5
+                                        display: 'flex', flexDirection: 'column'
                                     }}
                                 >
-                                    <Checkbox
-                                        size="small"
-                                        checked={goal.isCompleted}
-                                        onChange={() => handleToggleWeeklyGoal(idx)}
-                                        sx={{ p: 0, color: theme.palette.primary.main }}
-                                    />
-                                    <Box sx={{ flex: 1, position: 'relative' }}>
-                                        <Typography
-                                            className="weekly-goal-input"
-                                            contentEditable
-                                            suppressContentEditableWarning
-                                            onBlur={(e) => handleUpdateWeeklyGoalText(idx, e.currentTarget.textContent || "")}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    handleUpdateWeeklyGoalText(idx, e.currentTarget.textContent || "");
-                                                    handleAddWeeklyGoal();
-                                                }
-                                            }}
-                                            variant="body2"
-                                            fontWeight={600}
-                                            sx={{
-                                                outline: 'none',
-                                                textDecoration: goal.isCompleted ? 'line-through' : 'none',
-                                                opacity: goal.isCompleted ? 0.5 : 1,
-                                                minHeight: '1.2em',
-                                                color: 'text.primary',
-                                                position: 'relative',
-                                                zIndex: 1
-                                            }}
-                                        >
-                                            {goal.title}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Checkbox
+                                            size="small"
+                                            checked={goal.isCompleted}
+                                            onChange={() => handleToggleWeeklyGoal(idx)}
+                                            sx={{ p: 0, color: theme.palette.primary.main }}
+                                        />
+                                        <Typography variant="body2" fontWeight={700} sx={{ minWidth: 20, color: 'text.disabled', userSelect: 'none' }}>
+                                            {idx + 1}.
                                         </Typography>
-                                        {!goal.title && (
-                                            <Typography 
-                                                variant="body2" 
-                                                sx={{ 
-                                                    position: 'absolute', 
-                                                    top: 0, 
-                                                    left: 0, 
-                                                    color: 'text.disabled', 
-                                                    pointerEvents: 'none',
-                                                    fontWeight: 600,
-                                                    opacity: 0.7
+                                        <Box sx={{ flex: 1, position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => toggleExpand(idx)}>
+                                            <Typography
+                                                className="weekly-goal-input"
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onClick={(e) => e.stopPropagation()}
+                                                onBlur={(e) => handleUpdateWeeklyGoalText(idx, e.currentTarget.textContent || "")}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        handleUpdateWeeklyGoalText(idx, e.currentTarget.textContent || "");
+                                                        handleAddWeeklyGoal();
+                                                    }
+                                                }}
+                                                variant="body2"
+                                                fontWeight={600}
+                                                sx={{
+                                                    outline: 'none',
+                                                    textDecoration: goal.isCompleted ? 'line-through' : 'none',
+                                                    opacity: goal.isCompleted ? 0.5 : 1,
+                                                    minHeight: '1.2em',
+                                                    color: 'text.primary',
+                                                    position: 'relative',
+                                                    zIndex: 1,
+                                                    '&:empty::before': {
+                                                        content: '"Nhấn để nhập mục tiêu tuần..."',
+                                                        color: 'text.disabled',
+                                                        pointerEvents: 'none',
+                                                        opacity: 0.7,
+                                                        fontWeight: 600,
+                                                    }
                                                 }}
                                             >
-                                                Nhấn để nhập mục tiêu tuần...
+                                                {goal.title}
                                             </Typography>
-                                        )}
+                                        </Box>
+                                        <Stack direction="row" spacing={0.5}>
+                                            {hasSubGoals && (
+                                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleExpand(idx); }} sx={{ opacity: 0.5, '&:hover': { opacity: 1 } }}>
+                                                    <Icon icon={isExpanded ? "solar:alt-arrow-up-bold" : "solar:alt-arrow-down-bold"} />
+                                                </IconButton>
+                                            )}
+                                            <IconButton size="small" onMouseDown={(e) => { e.preventDefault(); handleAddSubGoal(idx); }} sx={{ opacity: 0.3, '&:hover': { opacity: 1 }, color: 'primary.main' }}>
+                                                <Icon icon="solar:align-bottom-bold" /> {/* Icon to add sub-goal */}
+                                            </IconButton>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleRemoveWeeklyGoal(idx); }} sx={{ opacity: 0.3, '&:hover': { opacity: 1 }, color: 'error.main' }}>
+                                                <Icon icon="solar:trash-bin-minimalistic-bold" />
+                                            </IconButton>
+                                        </Stack>
                                     </Box>
-                                    <Stack direction="row" spacing={0.5}>
-                                        <IconButton size="small" onMouseDown={(e) => { e.preventDefault(); handleAddWeeklyGoal(); }} sx={{ opacity: 0.3, '&:hover': { opacity: 1 } }}>
-                                            <Icon icon="solar:add-circle-bold" />
-                                        </IconButton>
-                                        <IconButton size="small" onClick={() => handleRemoveWeeklyGoal(idx)} sx={{ opacity: 0.3, '&:hover': { opacity: 1 }, color: 'error.main' }}>
-                                            <Icon icon="solar:trash-bin-minimalistic-bold" />
-                                        </IconButton>
-                                    </Stack>
+
+                                    {/* Subgoals Section */}
+                                    <Collapse in={isExpanded || !hasSubGoals}>
+                                        <Box sx={{ mt: hasSubGoals ? 1.5 : 0, pl: 4, pr: 1 }}>
+                                            <Stack spacing={1}>
+                                                {(goal.subGoals || []).map((sub: any, subIdx: number) => (
+                                                    <Box key={subIdx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        <Checkbox
+                                                            size="small"
+                                                            checked={sub.isCompleted}
+                                                            onChange={() => handleToggleSubGoal(idx, subIdx)}
+                                                            sx={{ p: 0, color: 'text.secondary', transform: 'scale(0.85)' }}
+                                                        />
+                                                        <Typography variant="caption" fontWeight={700} sx={{ minWidth: 24, color: 'text.disabled', userSelect: 'none' }}>
+                                                            {idx + 1}.{subIdx + 1}
+                                                        </Typography>
+                                                        <Box sx={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                                            <Typography
+                                                                className={`subgoal-input-${idx}`}
+                                                                contentEditable
+                                                                suppressContentEditableWarning
+                                                                onBlur={(e) => handleUpdateSubGoalText(idx, subIdx, e.currentTarget.textContent || "")}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        e.preventDefault();
+                                                                        handleUpdateSubGoalText(idx, subIdx, e.currentTarget.textContent || "");
+                                                                        handleAddSubGoal(idx);
+                                                                    }
+                                                                }}
+                                                                variant="caption"
+                                                                fontWeight={500}
+                                                                sx={{
+                                                                    outline: 'none',
+                                                                    textDecoration: sub.isCompleted ? 'line-through' : 'none',
+                                                                    opacity: sub.isCompleted ? 0.5 : 1,
+                                                                    minHeight: '1.2em',
+                                                                    color: 'text.secondary',
+                                                                    display: 'block',
+                                                                    '&:empty::before': {
+                                                                        content: '"Nhiệm vụ con..."',
+                                                                        color: 'text.disabled',
+                                                                        pointerEvents: 'none',
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {sub.title}
+                                                            </Typography>
+                                                        </Box>
+                                                        <IconButton size="small" onClick={() => handleRemoveSubGoal(idx, subIdx)} sx={{ opacity: 0.2, '&:hover': { opacity: 1 }, padding: 0.5 }}>
+                                                            <Icon icon="solar:close-circle-bold" width={16} />
+                                                        </IconButton>
+                                                    </Box>
+                                                ))}
+                                            </Stack>
+                                        </Box>
+                                    </Collapse>
                                 </Paper>
-                            ))}
+                            )})}
+                            
                             {localGoals.length === 0 && (
-                                <Button 
-                                    fullWidth 
-                                    variant="outlined" 
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
                                     onClick={handleAddWeeklyGoal}
                                     startIcon={<Icon icon="solar:add-circle-bold" />}
                                     sx={{ borderRadius: '12px', borderStyle: 'dashed', py: 1.5 }}
@@ -313,131 +400,21 @@ export const ExecutionPanel = () => {
                                     Thêm mục tiêu tuần mới
                                 </Button>
                             )}
-                        </Stack>
-                    </Box>
-
-                    <Box>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                            <Typography variant="overline" sx={{ color: 'warning.main', fontWeight: 800, display: 'block' }}>
-                                ⭐ Nhiệm vụ tiêu điểm: {dayNames[selectedDayIndex]}
-                            </Typography>
-                            <Stack direction="row" spacing={0.5}>
-                                {dayNames.map((day, idx) => (
-                                    <Box
-                                        key={day}
-                                        onClick={() => setSelectedDayIndex(idx)}
-                                        sx={{
-                                            width: 28,
-                                            height: 28,
-                                            borderRadius: '6px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            cursor: 'pointer',
-                                            fontSize: '0.7rem',
-                                            fontWeight: 700,
-                                            border: '1px solid',
-                                            transition: 'all 0.2s',
-                                            bgcolor: selectedDayIndex === idx ? 'warning.main' : 'transparent',
-                                            color: selectedDayIndex === idx ? 'white' : 'text.secondary',
-                                            borderColor: selectedDayIndex === idx ? 'warning.main' : alpha(theme.palette.divider, 0.5),
-                                            '&:hover': {
-                                                bgcolor: selectedDayIndex === idx ? 'warning.main' : alpha(theme.palette.warning.main, 0.05),
-                                                borderColor: 'warning.main'
-                                            }
-                                        }}
-                                    >
-                                        {day}
-                                    </Box>
-                                ))}
-                            </Stack>
-                        </Stack>
-                        <Stack spacing={1} sx={{ minHeight: '50px' }}>
-                            {(localFocus[selectedDayIndex] || []).map((task: any, idx: number) => (
-                                <Paper
-                                    key={idx}
-                                    elevation={0}
-                                    sx={{
-                                        p: 1.5, borderRadius: '12px',
-                                        bgcolor: task.isCompleted ? alpha(theme.palette.success.main, 0.05) : alpha(theme.palette.warning.main, 0.03),
-                                        border: '1px solid',
-                                        borderColor: task.isCompleted ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.warning.main, 0.1),
-                                        display: 'flex', alignItems: 'center', gap: 1.5
-                                    }}
-                                >
-                                    <Checkbox
-                                        size="small"
-                                        checked={task.isCompleted}
-                                        onChange={() => handleToggleDailyTask(idx)}
-                                        sx={{ p: 0, color: theme.palette.warning.main }}
-                                    />
-                                    <Box sx={{ flex: 1, position: 'relative' }}>
-                                        <Typography
-                                            className="daily-task-input"
-                                            contentEditable
-                                            suppressContentEditableWarning
-                                            onBlur={(e) => handleUpdateDailyTaskText(idx, e.currentTarget.textContent || "")}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault();
-                                                    handleUpdateDailyTaskText(idx, e.currentTarget.textContent || "")
-                                                    handleAddDailyTask();
-                                                }
-                                            }}
-                                            variant="body2"
-                                            fontWeight={600}
-                                            sx={{
-                                                outline: 'none',
-                                                textDecoration: task.isCompleted ? 'line-through' : 'none',
-                                                opacity: task.isCompleted ? 0.5 : 1,
-                                                minHeight: '1.2em',
-                                                color: 'text.primary',
-                                                position: 'relative',
-                                                zIndex: 1
-                                            }}
-                                        >
-                                            {task.title}
-                                        </Typography>
-                                        {!task.title && (
-                                            <Typography 
-                                                variant="body2" 
-                                                sx={{ 
-                                                    position: 'absolute', 
-                                                    top: 0, 
-                                                    left: 0, 
-                                                    color: 'text.disabled', 
-                                                    pointerEvents: 'none',
-                                                    fontWeight: 600,
-                                                    opacity: 0.7
-                                                }}
-                                            >
-                                                Nhấn để nhập nhiệm vụ tiêu điểm ngày...
-                                            </Typography>
-                                        )}
-                                    </Box>
-                                    <Stack direction="row" spacing={0.5}>
-                                        <IconButton size="small" onMouseDown={(e) => { e.preventDefault(); handleAddDailyTask(); }} sx={{ opacity: 0.3, '&:hover': { opacity: 1 } }}>
-                                            <Icon icon="solar:add-circle-bold" />
-                                        </IconButton>
-                                        <IconButton size="small" onClick={() => handleRemoveDailyTask(idx)} sx={{ opacity: 0.3, '&:hover': { opacity: 1 }, color: 'error.main' }}>
-                                            <Icon icon="solar:trash-bin-minimalistic-bold" />
-                                        </IconButton>
-                                    </Stack>
-                                </Paper>
-                            ))}
-                            {(localFocus[selectedDayIndex] || []).length === 0 && (
-                                <Button 
-                                    fullWidth 
-                                    variant="outlined" 
-                                    onClick={handleAddDailyTask}
+                            {localGoals.length > 0 && (
+                                <Button
+                                    fullWidth
+                                    variant="text"
+                                    onClick={handleAddWeeklyGoal}
                                     startIcon={<Icon icon="solar:add-circle-bold" />}
-                                    sx={{ borderRadius: '12px', borderStyle: 'dashed', py: 1.5, color: 'warning.main', borderColor: 'warning.main' }}
+                                    sx={{ borderRadius: '12px', py: 1, color: 'text.secondary' }}
                                 >
-                                    Thêm nhiệm vụ mới
+                                    Thêm mục tiêu tuần
                                 </Button>
                             )}
                         </Stack>
                     </Box>
+
+
                 </Stack>
             </Box>
 
